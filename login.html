@@ -9,17 +9,17 @@
 
 <body class="login-page">
 
+<!-- ===== NAVBAR ===== -->
 <div class="navbar-login">
   <div class="wrap">
     <div class="logo-group">
-      <div class="logo-wrapper">
-        <img src="./assets/img/DGPE_logo.png" class="logo" alt="DGPE">
-      </div>
-      <span class="brand">e-Learning</span> 
+      <img src="./assets/img/DGPE_logo.png" class="logo" alt="DGPE">
+      <span class="brand">e-Learning</span>
     </div>
   </div>
 </div>
 
+<!-- ===== TITRE ===== -->
 <section class="hero" style="background:none;min-height:auto;padding-top:60px;text-align:center">
   <div class="inner">
     <h1>Connexion</h1>
@@ -27,12 +27,13 @@
   </div>
 </section>
 
+<!-- ===== FORMULAIRE ===== -->
 <div class="login-wrap">
   <div class="login-card">
     <h2>Se connecter</h2>
 
     <label>Email professionnel</label>
-    <input id="email" class="input" type="email" placeholder="prenom.nom@dgpe.gouv">
+    <input id="email" class="input" type="email" placeholder="prenom.nom@dgpe.gouv.ci">
 
     <label>Mot de passe</label>
     <input id="password" class="input" type="password" placeholder="••••••••">
@@ -43,9 +44,7 @@
     </div>
 
     <button class="btn btn-primary" onclick="login()">Connexion</button>
-
     <br><br>
-
     <button class="btn btn-secondary" onclick="register()">Créer un compte</button>
   </div>
 </div>
@@ -54,65 +53,82 @@
 © 2025 DGPE – Direction Générale du Portefeuille de l’État
 </footer>
 
-<!-- ✅ SUPABASE SDK -->
+<!-- ===== POPUP DGPE ===== -->
+<div id="popup-overlay" class="popup-overlay hidden">
+  <div class="popup-card">
+    <h3 id="popup-title"></h3>
+    <p id="popup-message"></p>
+    <button onclick="closePopup()">OK</button>
+  </div>
+</div>
+
+<!-- ===== SUPABASE ===== -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* ===============================
-   ✅ CONFIG SUPABASE
-================================ */
+/* ================= CONFIG SUPABASE ================= */
 const SUPABASE_URL = "https://hrriedjmpwjfmfimqlmx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1AnZMUSy3A4X8xIrKJOKQw_cOX40j9V";
-
-// ✅ NE PAS UTILISER "const supabase = supabase..."
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* ===============================
-   ✅ CONNEXION
-================================ */
+/* ================= POPUP ================= */
+function showPopup(title, message) {
+  document.getElementById("popup-title").innerText = title;
+  document.getElementById("popup-message").innerText = message;
+  document.getElementById("popup-overlay").classList.remove("hidden");
+}
+
+function closePopup() {
+  document.getElementById("popup-overlay").classList.add("hidden");
+}
+
+/* ================= CONNEXION ================= */
 async function login() {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
 
   if (!email || !password) {
-    alert("❌ Veuillez remplir tous les champs.");
+    showPopup("Erreur", "Veuillez remplir tous les champs.");
     return;
   }
 
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
+  const { error } = await supabaseClient.auth.signInWithPassword({
     email,
     password,
   });
 
   if (error) {
-    alert("❌ Connexion refusée : " + error.message);
+    showPopup("Connexion refusée", error.message);
   } else {
-    alert("✅ Connexion réussie !");
-    window.location.href = "dashboard.html";
+    showPopup("Connexion réussie", "Bienvenue sur la plateforme DGPE.");
+    setTimeout(() => {
+      window.location.href = "dashboard.html";
+    }, 1200);
   }
 }
 
-/* ===============================
-   ✅ INSCRIPTION
-================================ */
+/* ================= INSCRIPTION ================= */
 async function register() {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
 
   if (!email || !password) {
-    alert("❌ Veuillez remplir tous les champs.");
+    showPopup("Erreur", "Veuillez remplir tous les champs.");
     return;
   }
 
-  const { data, error } = await supabaseClient.auth.signUp({
+  const { error } = await supabaseClient.auth.signUp({
     email,
     password,
   });
 
   if (error) {
-    alert("❌ Erreur inscription : " + error.message);
+    showPopup("Erreur inscription", error.message);
   } else {
-    alert("✅ Compte créé ! Vérifiez votre email avant de vous connecter.");
+    showPopup(
+      "Compte créé",
+      "Un email de confirmation vous a été envoyé."
+    );
   }
 }
 </script>

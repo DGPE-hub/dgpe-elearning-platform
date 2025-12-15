@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="fr">
 <head>
@@ -47,7 +46,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* ================= CONFIG SUPABASE ================= */
+/* ================= SUPABASE CONFIG ================= */
 const supabase = window.supabase.createClient(
   "https://jwkhtvqazookghqrutvu.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3a2h0dnFhem9va2docXJ1dHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3OTk0ODYsImV4cCI6MjA4MTM3NTQ4Nn0.2WxrcxfJMUGRrsEo5ZVOZLDEsVk29NjaSSc5N3NKPbM"
@@ -60,30 +59,26 @@ function isEmailPro(email) {
 
 /* ================= INSCRIPTION ================= */
 async function register() {
-  const emailInput = document.getElementById("email").value.trim();
-  const passwordInput = document.getElementById("password").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
 
-  if (!emailInput || !passwordInput) {
+  if (!email || !password) {
     alert("Veuillez remplir tous les champs.");
     return;
   }
 
-  if (!isEmailPro(emailInput)) {
+  if (!isEmailPro(email)) {
     alert("Veuillez utiliser un email professionnel.");
     return;
   }
 
   const { error } = await supabase.auth.signUp({
-    email: emailInput,
-    password: passwordInput,
-    options: {
-      emailRedirectTo:
-        "https://dgpe-hub.github.io/DGPE-E-LEARNING-PLATFORM/login.html"
-    }
+    email,
+    password
   });
 
   if (error) {
-    alert("Erreur : " + error.message);
+    alert("Erreur inscription : " + error.message);
   } else {
     alert("Compte créé. Vérifiez votre email pour confirmer.");
   }
@@ -91,16 +86,16 @@ async function register() {
 
 /* ================= CONNEXION ================= */
 async function login() {
-  const emailInput = document.getElementById("email").value.trim();
-  const passwordInput = document.getElementById("password").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
 
   const { error } = await supabase.auth.signInWithPassword({
-    email: emailInput,
-    password: passwordInput
+    email,
+    password
   });
 
   if (error) {
-    alert("Email non confirmé ou mot de passe incorrect.");
+    alert("Connexion refusée : " + error.message);
   } else {
     window.location.href = "dashboard.html";
   }

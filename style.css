@@ -1,35 +1,53 @@
+/* ======================================================
+   VARIABLES DGPE
+====================================================== */
 :root {
   --dgpe-accent: #1e66ff;
   --text: #e6edf3;
   --muted: #a7b1bd;
-  --glass: rgba(255, 255, 255, .06);
-  --glass-bd: rgba(255, 255, 255, .08);
+  --glass: rgba(255,255,255,.06);
+  --glass-bd: rgba(255,255,255,.08);
 }
 
+/* ======================================================
+   RESET & BASE
+====================================================== */
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 
 body {
   font-family: "Segoe UI", Roboto, Arial, sans-serif;
   color: var(--text);
-  background: url("./assets/img/fond-nuit.jpg") center/cover fixed no-repeat;
+  background: url("assets/img/fond-nuit.jpg") center/cover fixed no-repeat;
 }
 
+/* Login */
 body.login-page {
-  background: url("./assets/img/fond-jour.jpg") center/cover fixed no-repeat;
+  min-height: 100vh;
+  background: url("assets/img/fond-jour.jpg") no-repeat center center fixed;
+  background-size: cover;
 }
 
-/* ===== NAVBAR ===== */
-.navbar {
+/* Utilitaire */
+.hidden {
+  display: none !important;
+}
+
+/* ======================================================
+   NAVBAR
+====================================================== */
+.navbar,
+.navbar-login {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: rgba(5, 20, 36, .75);
+  background: rgba(5,20,36,.75);
   backdrop-filter: blur(6px);
-  border-bottom: 1px solid rgba(255, 255, 255, .06);
+  border-bottom: 1px solid rgba(255,255,255,.06);
 }
 
-.navbar .wrap {
+.navbar .wrap,
+.navbar-login .wrap {
   max-width: 1200px;
   margin: 0 auto;
   padding: 12px 20px;
@@ -38,34 +56,49 @@ body.login-page {
   gap: 16px;
 }
 
-/* ===== ALIGNEMENT LOGO + E-LEARNING ===== */
+/* Logo + titre */
 .logo-group {
   display: flex;
-  align-items: center;        /* centre verticalement */
-  gap: 10px;                  /* espace entre logo et texte */
+  align-items: center;
+  gap: 10px;
 }
 
 .logo {
-  height: 140px;         /* tu peux ajuster à 120px ou 100px si trop grand */
+  height: 90px;
   width: auto;
   object-fit: contain;
-
-  /* --- Glow bleu permanent --- */
-  filter: drop-shadow(0 0 6px rgba(30,102,255,0.7))
-          drop-shadow(0 0 12px rgba(30,102,255,0.55))
-          drop-shadow(0 0 18px rgba(30,102,255,0.35));
+  filter:
+    drop-shadow(0 0 6px rgba(30,102,255,.7))
+    drop-shadow(0 0 12px rgba(30,102,255,.5));
 }
 
+/* Titre e-Learning */
 .brand {
-  font-size: 34px;            /* agrandit le texte */
+  font-size: 34px;
   font-weight: 700;
-  color: #ffffff;
-  white-space: nowrap;        /* empêche le retour à la ligne */
-  display: inline-block;
-  transform: translateY(4px); /* descend légèrement le texte */
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3); /* effet de lumière doux */
+  color: #fff;
+  white-space: nowrap;
+  transform: translateY(4px);
+  animation: pulseGlow 2.5s ease-in-out infinite;
 }
 
+/* Animation lueur */
+@keyframes pulseGlow {
+  0% {
+    text-shadow: 0 0 4px rgba(255,255,255,.4),
+                 0 0 8px rgba(30,102,255,.3);
+  }
+  50% {
+    text-shadow: 0 0 12px rgba(255,255,255,.7),
+                 0 0 22px rgba(30,102,255,.8);
+  }
+  100% {
+    text-shadow: 0 0 4px rgba(255,255,255,.4),
+                 0 0 8px rgba(30,102,255,.3);
+  }
+}
+
+/* Menu desktop */
 .nav {
   margin-left: auto;
   display: flex;
@@ -81,25 +114,31 @@ body.login-page {
   border-radius: 10px;
 }
 
-.nav a:hover { background: rgba(255, 255, 255, .08); }
+.nav a:hover {
+  background: rgba(255,255,255,.08);
+}
 
 .nav .pill {
   background: var(--dgpe-accent);
   color: #fff;
-  padding: 10px 14px;
+  padding: 10px 16px;
   border-radius: 999px;
 }
 
-/* ===== MENU BURGER ===== */
+/* ======================================================
+   BURGER & MENU MOBILE
+====================================================== */
 .burger {
   display: none;
   margin-left: auto;
   cursor: pointer;
+  background: none;
   border: 0;
-  background: transparent;
-  padding: 8px;
 }
-.burger span, .burger::before, .burger::after {
+
+.burger span,
+.burger::before,
+.burger::after {
   content: "";
   display: block;
   width: 26px;
@@ -108,20 +147,26 @@ body.login-page {
   margin: 6px 0;
   transition: .3s;
 }
-.burger.active::before { transform: translateY(8px) rotate(45deg); }
-.burger.active::after { transform: translateY(-8px) rotate(-45deg); }
-.burger.active span { opacity: 0; }
 
-/* ===== MENU MOBILE ===== */
+.burger.active::before {
+  transform: translateY(8px) rotate(45deg);
+}
+.burger.active::after {
+  transform: translateY(-8px) rotate(-45deg);
+}
+.burger.active span {
+  opacity: 0;
+}
+
+/* Offcanvas */
 .offcanvas {
   position: fixed;
   top: 0;
   right: -320px;
   width: 300px;
   height: 100vh;
-  background: rgba(5, 20, 36, .98);
+  background: rgba(5,20,36,.98);
   backdrop-filter: blur(8px);
-  box-shadow: -10px 0 30px rgba(0, 0, 0, .4);
   transition: right .35s ease;
   z-index: 1200;
   padding: 18px;
@@ -144,18 +189,21 @@ body.login-page {
   border-radius: 10px;
 }
 
-.offcanvas a:hover { background: rgba(255, 255, 255, .08); }
+.offcanvas a:hover {
+  background: rgba(255,255,255,.08);
+}
 
 .offcanvas .close {
   position: absolute;
   top: 10px;
   right: 12px;
   font-size: 26px;
-  color: #fff;
   cursor: pointer;
 }
 
-/* ===== CONTENU ===== */
+/* ======================================================
+   HERO & CONTENU
+====================================================== */
 .hero {
   min-height: 56vh;
   display: flex;
@@ -163,7 +211,6 @@ body.login-page {
   justify-content: center;
   text-align: center;
   position: relative;
-  overflow: hidden;
   background: linear-gradient(180deg, rgba(11,53,91,.9), rgba(11,53,91,.9));
 }
 
@@ -171,53 +218,65 @@ body.login-page {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: repeating-linear-gradient(-30deg, rgba(255,255,255,.06) 0, rgba(255,255,255,.06) 2px, transparent 2px, transparent 20px);
+  background-image: repeating-linear-gradient(
+    -30deg,
+    rgba(255,255,255,.06) 0,
+    rgba(255,255,255,.06) 2px,
+    transparent 2px,
+    transparent 20px
+  );
 }
 
 .hero .inner {
   position: relative;
-  z-index: 1;
   max-width: 900px;
   padding: 40px 20px;
 }
 
-.hero h1 { font-size: 46px; margin: 0 0 10px; }
-.hero p { color: var(--muted); margin: 0 auto 20px; font-size: 18px; }
+.hero h1 {
+  font-size: 46px;
+  margin-bottom: 10px;
+}
 
+.hero p {
+  color: var(--muted);
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+/* Boutons */
 .btn {
   display: inline-block;
-  text-decoration: none;
-  color: #fff;
   font-weight: 700;
   background: var(--dgpe-accent);
+  color: #fff;
   padding: 14px 22px;
   border-radius: 999px;
+  text-decoration: none;
   box-shadow: 0 10px 24px rgba(30,102,255,.25);
-  transition: .25s;
 }
-.btn:hover { transform: translateY(-2px); }
 
-.section { max-width: 1200px; margin: 32px auto; padding: 0 20px; }
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+/* ======================================================
+   CARDS & PANELS
+====================================================== */
+.section,
+.page {
+  max-width: 1200px;
+  margin: 32px auto;
+  padding: 0 20px;
+}
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px,1fr));
   gap: 18px;
 }
 
-.card {
-  background: var(--glass);
-  border: 1px solid var(--glass-bd);
-  border-radius: 18px;
-  padding: 22px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.25);
-  transition: .25s;
-}
-
-.card:hover { transform: translateY(-3px); }
-
-.page { max-width: 1200px; margin: 24px auto; padding: 0 20px; }
-
+.card,
 .panel {
   background: var(--glass);
   border: 1px solid var(--glass-bd);
@@ -226,25 +285,14 @@ body.login-page {
   box-shadow: 0 10px 30px rgba(0,0,0,.25);
 }
 
-/* ===== LOGIN ===== */
-.navbar-login {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background: rgba(5,20,36,.75);
-  border-bottom: 1px solid rgba(255,255,255,.06);
-}
-.navbar-login .wrap {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 12px 20px;
+/* ======================================================
+   LOGIN
+====================================================== */
+.login-wrap {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  justify-content: center;
+  padding: 30px 16px;
 }
-.navbar-login .brand { font-weight: 700; }
-
-.login-wrap { display: flex; justify-content: center; padding: 30px 16px; }
 
 .login-card {
   width: 420px;
@@ -260,78 +308,18 @@ body.login-page {
   padding: 12px;
   border-radius: 10px;
   border: 1px solid #d0d7de;
-  margin: 6px 0 14px;
-  transition: .2s;
+  margin-bottom: 14px;
 }
+
 .input:focus {
   outline: none;
   border-color: #84b2ff;
   box-shadow: 0 0 0 3px rgba(30,102,255,.2);
 }
 
-.row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-}
-.row a { color: #0b57d0; text-decoration: none; }
-
-.btn-primary {
-  width: 100%;
-  margin-top: 8px;
-}
-
-.footer {
-  max-width: 1200px;
-  margin: 32px auto;
-  padding: 20px;
-  text-align: center;
-  color: var(--muted);
-}
-
-/* ===== RESPONSIVE ===== */
-@media (max-width:960px) {
-  .nav { display: none; }
-  .burger { display: block; }
-}
-/* === Effet pulsation lumineuse pour e-Learning === */
-/* === Contour lumineux permanent pour e-Learning === */
-/* === Effet pulsation lumineuse pour e-Learning === */
-.brand {
-  font-size: 34px;
-  font-weight: 700;
-  color: #ffffff;
-  white-space: nowrap;
-  display: inline-block;
-  transform: translateY(4px);
-
-  /* ✨ Effet pulsation */
-  animation: pulseGlow 2.5s ease-in-out infinite;
-}
-
-/* Animation de la lueur */
-@keyframes pulseGlow {
-  0% {
-    text-shadow: 0 0 4px rgba(255, 255, 255, 0.4),
-                 0 0 8px rgba(30, 102, 255, 0.3);
-  }
-  50% {
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.7),
-                 0 0 18px rgba(30, 102, 255, 0.8),
-                 0 0 28px rgba(30, 102, 255, 0.6);
-  }
-  100% {
-    text-shadow: 0 0 4px rgba(255, 255, 255, 0.4),
-                 0 0 8px rgba(30, 102, 255, 0.3);
-  }
-}
-body.login-page {
-  min-height: 100vh;
-  background: url("./assets/img/fond-jour.jpg") no-repeat center center fixed;
-  background-size: cover;
-}
-/* ===== POPUP DGPE ===== */
+/* ======================================================
+   POPUP
+====================================================== */
 .popup-overlay {
   position: fixed;
   inset: 0;
@@ -343,10 +331,6 @@ body.login-page {
   z-index: 5000;
 }
 
-.popup-overlay.hidden {
-  display: none;
-}
-
 .popup-card {
   background: #f9fafb;
   color: #0b1a2b;
@@ -354,26 +338,23 @@ body.login-page {
   padding: 26px;
   width: 360px;
   text-align: center;
-  box-shadow: 0 20px 50px rgba(0,0,0,.35);
 }
 
-.popup-card h3 {
-  margin: 0 0 10px;
-  font-size: 20px;
+/* ======================================================
+   FOOTER
+====================================================== */
+.footer {
+  max-width: 1200px;
+  margin: 32px auto;
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
 }
 
-.popup-card p {
-  font-size: 15px;
-  margin-bottom: 20px;
+/* ======================================================
+   RESPONSIVE
+====================================================== */
+@media (max-width:960px) {
+  .nav { display: none; }
+  .burger { display: block; }
 }
-
-.popup-card button {
-  background: #1e66ff;
-  color: #fff;
-  border: 0;
-  border-radius: 999px;
-  padding: 10px 24px;
-  font-weight: 700;
-  cursor: pointer;
-}
-

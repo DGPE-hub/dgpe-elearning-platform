@@ -30,21 +30,13 @@
   <div class="login-card">
 
     <label>Email professionnel</label>
-    <input
-      id="email"
-      type="email"
-      class="input"
-      placeholder="prenom.nom@dgpe.gouv.ci"
-      autocomplete="username"
-    >
+    <input id="email" type="email" class="input"
+           placeholder="prenom.nom@dgpe.gouv.ci"
+           autocomplete="username">
 
     <label>Mot de passe</label>
-    <input
-      id="password"
-      type="password"
-      class="input"
-      autocomplete="current-password"
-    >
+    <input id="password" type="password" class="input"
+           autocomplete="current-password">
 
     <button class="btn btn-primary" id="btnLogin" type="button">
       Connexion
@@ -56,7 +48,7 @@
       Demander un compte
     </button>
 
-    <p id="msg" style="margin-top:14px;font-size:13px;opacity:.85;line-height:1.4"></p>
+    <p id="msg" style="margin-top:14px;font-size:13px;opacity:.85"></p>
 
   </div>
 </div>
@@ -72,26 +64,21 @@
   import {
     getFirestore,
     doc,
-    getDoc,
-    setDoc,
-    serverTimestamp
+    getDoc
   } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
   // 🔐 Firebase config DGPE
   const firebaseConfig = {
     apiKey: "AIzaSyDLeMFoRoclFnfubLqhJBvwtySxLttyHqs",
     authDomain: "dgpe-elearning.firebaseapp.com",
-    projectId: "dgpe-elearning",
-    storageBucket: "dgpe-elearning.appspot.com",
-    messagingSenderId: "564422941000",
-    appId: "1:564422941000:web:f5232cd0cebafb6aaf7b7d"
+    projectId: "dgpe-elearning"
   };
 
   const app  = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db   = getFirestore(app);
 
-  // 🔒 Nettoyage session
+  // Nettoyage session
   await signOut(auth);
 
   const emailEl = document.getElementById("email");
@@ -105,42 +92,6 @@
     msgEl.style.color = ok ? "#0b2a4a" : "#c62828";
     msgEl.textContent = text;
   }
-
-  // =========================
-  // 📝 DEMANDE DE COMPTE
-  // =========================
-  btnRegister.onclick = async () => {
-    const email = emailEl.value.trim();
-    const password = passEl.value.trim();
-
-    if (!email || !password) {
-      return setMsg("Veuillez remplir tous les champs.", false);
-    }
-
-    if (password.length < 6) {
-      return setMsg("Mot de passe : minimum 6 caractères.", false);
-    }
-
-    try {
-      setMsg("📨 Envoi de la demande à l’administration…");
-
-      // 🔸 Enregistrement de la DEMANDE UNIQUEMENT
-      await setDoc(doc(db, "user_requests", email), {
-        email,
-        password,          // ⚠️ temporaire (phase prototype)
-        status: "PENDING",
-        createdAt: serverTimestamp()
-      });
-
-      setMsg(
-        "✅ Demande envoyée avec succès.\n" +
-        "Votre compte sera activé après validation par l’administration DGPE."
-      );
-
-    } catch (e) {
-      setMsg("❌ Erreur : " + e.message, false);
-    }
-  };
 
   // =========================
   // 🔑 CONNEXION
@@ -158,13 +109,13 @@
 
       const cred = await signInWithEmailAndPassword(auth, email, password);
 
-      // 🔍 Vérification fiche ADMIN
+      // Vérification Firestore
       const snap = await getDoc(doc(db, "users", cred.user.uid));
 
       if (!snap.exists()) {
         await signOut(auth);
         return setMsg(
-          "⛔ Compte non activé.\nVeuillez attendre la validation par l’administration DGPE.",
+          "⛔ Compte non activé. Veuillez attendre la validation DGPE.",
           false
         );
       }
@@ -177,12 +128,19 @@
         );
       }
 
-      // ✅ ACCÈS AUTORISÉ
+      // ✅ OK
       window.location.href = "dashboard.html";
 
     } catch (e) {
-      setMsg("❌ Connexion refusée : " + e.message, false);
+      setMsg("❌ Connexion refusée : identifiants incorrects.", false);
     }
+  };
+
+  // =========================
+  // 📝 DEMANDE DE COMPTE
+  // =========================
+  btnRegister.onclick = () => {
+    window.location.href = "register.html";
   };
 </script>
 

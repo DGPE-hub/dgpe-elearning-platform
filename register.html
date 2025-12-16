@@ -19,21 +19,20 @@
 </div>
 
 <section class="hero" style="padding-top:60px;text-align:center">
-  <h1>Demande de compte DGPE</h1>
-  <p>Création soumise à validation de l’administration</p>
+  <h1>Créer un compte DGPE</h1>
+  <p>Votre demande sera validée par l’administration</p>
 </section>
 
 <div class="login-wrap">
   <div class="login-card">
 
     <label>Email professionnel</label>
-    <input id="email" type="email" class="input"
-           placeholder="prenom.nom@dgpe.gouv.ci">
+    <input id="email" type="email" class="input" placeholder="prenom.nom@dgpe.gouv.ci">
 
     <label>Mot de passe</label>
     <input id="password" type="password" class="input">
 
-    <button class="btn btn-primary" id="btnCreate">
+    <button class="btn btn-primary" id="btnRegister">
       Envoyer la demande
     </button>
 
@@ -56,57 +55,52 @@
     serverTimestamp
   } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-  // 🔐 Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyDLeMFoRoclFnfubLqhJBvwtySxLttyHqs",
     authDomain: "dgpe-elearning.firebaseapp.com",
     projectId: "dgpe-elearning"
   };
 
-  const app  = initializeApp(firebaseConfig);
+  const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db   = getFirestore(app);
 
-  await signOut(auth); // sécurité
+  await signOut(auth);
 
   const emailEl = document.getElementById("email");
   const passEl  = document.getElementById("password");
   const msgEl   = document.getElementById("msg");
-  const btn     = document.getElementById("btnCreate");
 
-  btn.onclick = async () => {
+  document.getElementById("btnRegister").onclick = async () => {
     const email = emailEl.value.trim();
     const pass  = passEl.value.trim();
 
     if (!email || !pass) {
-      msgEl.style.color = "red";
-      msgEl.textContent = "Veuillez remplir tous les champs.";
+      msgEl.innerText = "Veuillez remplir tous les champs.";
       return;
     }
 
-    msgEl.style.color = "#0b2a4a";
-    msgEl.textContent = "⏳ Envoi de la demande…";
+    msgEl.innerText = "Création du compte…";
 
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, pass);
 
-      // 🔥 Création Firestore (EN_ATTENTE)
       await setDoc(doc(db, "users", cred.user.uid), {
-        email: email,
+        email,
         role: "AGENT",
         status: "EN_ATTENTE",
         createdAt: serverTimestamp()
       });
 
       msgEl.style.color = "green";
-      msgEl.innerHTML =
-        "✅ Demande envoyée.<br>Votre compte sera activé par l’administration DGPE.";
+      msgEl.innerText =
+        "Demande envoyée avec succès. Votre compte sera activé par l’administration.";
 
       await signOut(auth);
 
     } catch (e) {
       msgEl.style.color = "red";
-      msgEl.textContent = "❌ " + e.message;
+      msgEl.innerText = e.message;
     }
   };
 </script>

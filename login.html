@@ -39,15 +39,12 @@
     <button class="btn btn-primary" id="btnLogin">Connexion</button>
     <br><br>
 
-    <button class="btn btn-secondary" id="btnRegister">Créer un compte</button>
-    <br><br>
-
-    <button class="btn btn-secondary" id="btnResend" style="display:none">
-      Renvoyer l’email de vérification
+    <button class="btn btn-secondary" onclick="location.href='register-qr.html'">
+      Créer un compte (QR)
     </button>
 
     <p style="margin-top:14px;font-size:13px;opacity:.75">
-      ℹ️ Après validation de votre email, revenez ici et reconnectez-vous.
+      ℹ️ Les comptes sont activés par l’administration DGPE.
     </p>
 
   </div>
@@ -58,11 +55,14 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
   import {
     getAuth,
-    createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
-    sendEmailVerification,
     signOut
   } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+  import {
+    getFirestore,
+    doc,
+    getDoc
+  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
   // 🔐 Firebase
   const firebaseConfig = {
@@ -76,66 +76,44 @@
 
   const app  = initializeApp(firebaseConfig);
   const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  // 🔴 Sécurité : aucune session fantôme
+  await signOut(auth);
 
   const emailInput    = document.getElementById("email");
   const passwordInput = document.getElementById("password");
-  const btnResend     = document.getElementById("btnResend");
-
-  // 🔴 IMPORTANT : on nettoie toute session résiduelle
-  await signOut(auth);
-
-  // ================= INSCRIPTION =================
-  btnRegister.onclick = async () => {
-    if (!emailInput.value || !passwordInput.value) {
-      alert("Veuillez remplir tous les champs.");
-      return;
-    }
-
-    try {
-      const cred = await createUserWithEmailAndPassword(
-        auth,
-        emailInput.value.trim(),
-        passwordInput.value.trim()
-      );
-
-      await sendEmailVerification(cred.user);
-
-      alert(
-        "✅ Compte créé.\n\n" +
-        "📩 Un email de vérification a été envoyé.\n" +
-        "➡️ Cliquez sur le lien reçu,\n" +
-        "➡️ puis revenez vous connecter ici."
-      );
-
-      await signOut(auth); // 🔐 reset propre
-
-    } catch (e) {
-      alert("Erreur : " + e.message);
-    }
-  };
 
   // ================= CONNEXION =================
-  btnLogin.onclick = async () => {
+  document.getElementById("btnLogin").onclick = async () => {
     if (!emailInput.value || !passwordInput.value) {
       alert("Veuillez remplir tous les champs.");
       return;
     }
 
     try {
+      // 1️⃣ Auth Firebase
       const cred = await signInWithEmailAndPassword(
         auth,
         emailInput.value.trim(),
         passwordInput.value.trim()
       );
 
-      await cred.user.reload(); // 🔴 OBLIGATOIRE
+      // 2️⃣ Vérification Firestore (ADMIN)
+      const userDoc = await getDoc(doc(db, "users", cred.user.uid));
 
-      if (!cred.user.emailVerified) {
-        btnResend.style.display = "block";
+      if (!userDoc.exists()) {
+        alert("⛔ Compte non reconnu par l’administration.");
+        await signOut(auth);
+        return;
+      }
+
+      const data = userDoc.data();
+
+      if (data.status !== "ACTIF") {
         alert(
-          "⚠️ Adresse email non vérifiée.\n\n" +
-          "Veuillez vérifier votre boîte mail\n" +
-          "puis vous reconnecter."
+          "⏳ Votre compte n’est pas encore activé.\n\n" +
+          "Veuillez attendre la validation par l’administration DGPE."
         );
         await signOut(auth);
         return;
@@ -147,14 +125,6 @@
     } catch (e) {
       alert("Connexion refusée : " + e.message);
     }
-  };
-
-  // ================= RENVOI EMAIL =================
-  btnResend.onclick = async () => {
-    alert(
-      "ℹ️ Connectez-vous à nouveau\n" +
-      "pour demander un nouvel email de vérification."
-    );
   };
 </script>
 

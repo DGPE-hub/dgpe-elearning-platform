@@ -52,7 +52,7 @@
 
     <br><br>
 
-    <!-- 🔐 Création via QR -->
+    <!-- 🔐 Création de compte via QR -->
     <button
       class="btn btn-secondary"
       id="btnQR"
@@ -62,8 +62,8 @@
     </button>
 
     <p style="margin-top:14px;font-size:13px;opacity:.75;line-height:1.4">
-      ℹ️ Les comptes sont créés et activés exclusivement par
-      l’administration DGPE.
+      ℹ️ Les comptes sont créés via QR Code et
+      <strong>activés par l’administration DGPE</strong>.
     </p>
 
   </div>
@@ -83,7 +83,7 @@
     getDoc
   } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-  // 🔐 Firebase config
+  // 🔐 Configuration Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyDLeMFoRoclFnfubLqhJBvwtySxLttyHqs",
     authDomain: "dgpe-elearning.firebaseapp.com",
@@ -97,7 +97,7 @@
   const auth = getAuth(app);
   const db   = getFirestore(app);
 
-  // 🔒 Sécurité : aucune session résiduelle
+  // 🔒 Sécurité : aucune session persistante
   await signOut(auth);
 
   const emailInput    = document.getElementById("email");
@@ -117,7 +117,7 @@
       // 1️⃣ Auth Firebase
       const cred = await signInWithEmailAndPassword(auth, email, pass);
 
-      // 2️⃣ Vérification administrative Firestore
+      // 2️⃣ Vérification côté administration (Firestore)
       const snap = await getDoc(doc(db, "users", cred.user.uid));
 
       if (!snap.exists()) {
@@ -147,6 +147,8 @@
 
   // ================= QR =================
   document.getElementById("btnQR").onclick = () => {
+    // ⚠️ Le QR est une IMAGE côté admin
+    // Ici on redirige simplement vers la page sécurisée
     window.location.href = "register-qr.html";
   };
 </script>

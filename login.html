@@ -30,23 +30,30 @@
   <div class="login-card">
 
     <label>Email</label>
-    <input id="email" type="email" class="input" placeholder="prenom.nom@dgpe.gouv.ci">
+    <input id="email" type="email" class="input"
+           placeholder="prenom.nom@dgpe.gouv.ci">
 
     <label>Mot de passe</label>
     <input id="password" type="password" class="input">
 
-    <button class="btn btn-primary" id="btnLogin">Connexion</button>
+    <button class="btn btn-primary" id="btnLogin">
+      Connexion
+    </button>
+
     <br><br>
 
-    <button class="btn btn-secondary" id="btnRegister">Créer un compte</button>
+    <button class="btn btn-secondary" id="btnRegister">
+      Créer un compte
+    </button>
+
     <br><br>
 
     <button class="btn btn-secondary" id="btnResend" style="display:none">
       Renvoyer l’email de vérification
     </button>
 
-    <p style="margin-top:16px;font-size:13px;opacity:.8;line-height:1.4">
-      ℹ️ Après avoir validé votre email, revenez sur cette page et reconnectez-vous.
+    <p style="margin-top:14px;font-size:13px;opacity:.75">
+      ℹ️ Après validation de votre email, revenez ici et reconnectez-vous.
     </p>
 
   </div>
@@ -59,8 +66,7 @@
     getAuth,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
-    sendEmailVerification,
-    applyActionCode
+    sendEmailVerification
   } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
   // 🔐 Firebase config
@@ -80,94 +86,49 @@
   const passwordInput = document.getElementById("password");
   const btnResend     = document.getElementById("btnResend");
 
-  // ==================================================
-  // ✅ 1) SI ON ARRIVE DEPUIS LE MAIL: ?mode=verifyEmail&oobCode=...
-  // ==================================================
-  const params  = new URLSearchParams(window.location.search);
-  const mode    = params.get("mode");
-  const oobCode = params.get("oobCode");
-
-  if (mode === "verifyEmail" && oobCode) {
-    try {
-      await applyActionCode(auth, oobCode);
-
-      alert(
-        "✅ Adresse email vérifiée avec succès.\n\n" +
-        "🔐 Vous pouvez maintenant vous connecter."
-      );
-
-      // On nettoie l'URL (on enlève ?mode=...)
-      window.history.replaceState({}, document.title, "login.html");
-
-    } catch (e) {
-      alert(
-        "⚠️ Lien de vérification invalide ou déjà utilisé.\n\n" +
-        "👉 Cliquez sur « Renvoyer l’email de vérification » depuis la page de connexion."
-      );
-
-      // Nettoyer l'URL aussi pour éviter le message en boucle
-      window.history.replaceState({}, document.title, "login.html");
-    }
-  }
-
-  // ==================================================
-  // ✅ 2) INSCRIPTION
-  // ==================================================
+  // ================= INSCRIPTION =================
   document.getElementById("btnRegister").onclick = async () => {
-    const email    = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-
-    if (!email || !password) {
-      alert("Veuillez remplir tous les champs.");
-      return;
-    }
-
     try {
-      const userCred = await createUserWithEmailAndPassword(auth, email, password);
-
-      // 👉 IMPORTANT: envoi du mail
-      await sendEmailVerification(userCred.user);
-
-      alert(
-        "✅ Compte créé.\n\n" +
-        "📩 Un email de vérification a été envoyé.\n" +
-        "➡️ Cliquez sur le lien reçu, puis revenez ici pour vous connecter."
+      const cred = await createUserWithEmailAndPassword(
+        auth,
+        emailInput.value.trim(),
+        passwordInput.value.trim()
       );
 
+      await sendEmailVerification(cred.user);
+
+      alert(
+        "✅ Compte créé avec succès.\n\n" +
+        "📩 Un email de vérification a été envoyé.\n" +
+        "➡️ Cliquez sur le lien reçu,\n" +
+        "➡️ puis revenez vous connecter ici."
+      );
     } catch (e) {
       alert("Erreur : " + e.message);
     }
   };
 
-  // ==================================================
-  // ✅ 3) CONNEXION
-  // ==================================================
+  // ================= CONNEXION =================
   document.getElementById("btnLogin").onclick = async () => {
-    const email    = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-
-    if (!email || !password) {
-      alert("Veuillez remplir tous les champs.");
-      return;
-    }
-
     try {
-      const userCred = await signInWithEmailAndPassword(auth, email, password);
+      const cred = await signInWithEmailAndPassword(
+        auth,
+        emailInput.value.trim(),
+        passwordInput.value.trim()
+      );
 
-      // recharge l'état (important)
-      await userCred.user.reload();
+      await cred.user.reload();
 
-      if (!userCred.user.emailVerified) {
+      if (!cred.user.emailVerified) {
         btnResend.style.display = "block";
         alert(
-          "📩 Email de vérification requis.\n\n" +
-          "Un lien a été envoyé sur votre adresse.\n" +
-          "Veuillez cliquer sur ce lien puis revenir vous connecter."
+          "⚠️ Adresse email non vérifiée.\n\n" +
+          "Veuillez vérifier votre boîte mail."
         );
         return;
       }
 
-      // ✅ email ok
+      // ✅ ACCÈS AUTORISÉ
       window.location.href = "dashboard.html";
 
     } catch (e) {
@@ -175,27 +136,21 @@
     }
   };
 
-  // ==================================================
-  // ✅ 4) RENVOI EMAIL
-  // ==================================================
+  // ================= RENVOI EMAIL =================
   btnResend.onclick = async () => {
-    // Ici, l'utilisateur DOIT être connecté pour que auth.currentUser existe
     if (!auth.currentUser) {
-      alert("Connectez-vous d’abord, puis cliquez sur « Renvoyer ».");
+      alert("Veuillez vous reconnecter d’abord.");
       return;
     }
 
-    try {
-      await sendEmailVerification(auth.currentUser);
-      alert(
-        "📩 Nouvel email de vérification envoyé.\n\n" +
-        "⚠️ Utilisez uniquement le DERNIER email reçu."
-      );
-    } catch (e) {
-      alert("Erreur : " + e.message);
-    }
+    await sendEmailVerification(auth.currentUser);
+    alert(
+      "📩 Nouvel email de vérification envoyé.\n\n" +
+      "⚠️ Utilisez uniquement le DERNIER email reçu."
+    );
   };
 </script>
 
 </body>
 </html>
+

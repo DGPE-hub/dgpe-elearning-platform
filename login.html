@@ -9,6 +9,7 @@
 
 <body class="login-page">
 
+<!-- ================= NAVBAR ================= -->
 <div class="navbar-login">
   <div class="wrap">
     <div class="logo-group">
@@ -18,35 +19,53 @@
   </div>
 </div>
 
+<!-- ================= TITRE ================= -->
 <section class="hero" style="padding-top:60px;text-align:center">
   <h1>Connexion</h1>
   <p>Accédez à votre espace DGPE</p>
 </section>
 
+<!-- ================= FORM ================= -->
 <div class="login-wrap">
   <div class="login-card">
 
-    <label>Email</label>
-    <input id="email" type="email" class="input" placeholder="prenom.nom@dgpe.gouv.ci" autocomplete="username">
+    <label>Email professionnel</label>
+    <input
+      id="email"
+      type="email"
+      class="input"
+      placeholder="prenom.nom@dgpe.gouv.ci"
+      autocomplete="username"
+    >
 
     <label>Mot de passe</label>
-    <input id="password" type="password" class="input" autocomplete="current-password">
+    <input
+      id="password"
+      type="password"
+      class="input"
+      autocomplete="current-password"
+    >
 
-    <button class="btn btn-primary" id="btnLogin" type="button">Connexion</button>
+    <button class="btn btn-primary" id="btnLogin" type="button">
+      Connexion
+    </button>
+
     <br><br>
 
-    <button class="btn btn-secondary" id="btnRegister" type="button">Créer un compte</button>
+    <button class="btn btn-secondary" id="btnRegister" type="button">
+      Demander un compte
+    </button>
 
-    <p id="msg" style="margin-top:14px;font-size:13px;opacity:.8;line-height:1.4"></p>
+    <p id="msg" style="margin-top:14px;font-size:13px;opacity:.85;line-height:1.4"></p>
 
   </div>
 </div>
 
+<!-- ================= FIREBASE ================= -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
   import {
     getAuth,
-    createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     signOut
   } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
@@ -58,7 +77,7 @@
     serverTimestamp
   } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-  // ✅ Ton Firebase config
+  // 🔐 Firebase config DGPE
   const firebaseConfig = {
     apiKey: "AIzaSyDLeMFoRoclFnfubLqhJBvwtySxLttyHqs",
     authDomain: "dgpe-elearning.firebaseapp.com",
@@ -68,17 +87,18 @@
     appId: "1:564422941000:web:f5232cd0cebafb6aaf7b7d"
   };
 
-  const app = initializeApp(firebaseConfig);
+  const app  = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-  const db = getFirestore(app);
+  const db   = getFirestore(app);
 
-  // 🔒 Nettoyage session fantôme
+  // 🔒 Nettoyage session
   await signOut(auth);
 
   const emailEl = document.getElementById("email");
   const passEl  = document.getElementById("password");
   const msgEl   = document.getElementById("msg");
-  const btnLogin = document.getElementById("btnLogin");
+
+  const btnLogin    = document.getElementById("btnLogin");
   const btnRegister = document.getElementById("btnRegister");
 
   function setMsg(text, ok = true) {
@@ -87,67 +107,77 @@
   }
 
   // =========================
-  // 🆕 INSCRIPTION (DEMANDE)
+  // 📝 DEMANDE DE COMPTE
   // =========================
   btnRegister.onclick = async () => {
     const email = emailEl.value.trim();
     const password = passEl.value.trim();
 
-    if (!email || !password) return setMsg("Veuillez remplir tous les champs.", false);
-    if (password.length < 6) return setMsg("Mot de passe: минимум 6 caractères.", false);
+    if (!email || !password) {
+      return setMsg("Veuillez remplir tous les champs.", false);
+    }
+
+    if (password.length < 6) {
+      return setMsg("Mot de passe : minimum 6 caractères.", false);
+    }
 
     try {
-      setMsg("Création du compte…");
-      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      setMsg("📨 Envoi de la demande à l’administration…");
 
-      // 🔸 Demande PENDING (admin doit valider)
-      await setDoc(doc(db, "user_requests", cred.user.uid), {
-        uid: cred.user.uid,
+      // 🔸 Enregistrement de la DEMANDE UNIQUEMENT
+      await setDoc(doc(db, "user_requests", email), {
         email,
+        password,          // ⚠️ temporaire (phase prototype)
         status: "PENDING",
         createdAt: serverTimestamp()
       });
 
-      setMsg("✅ Compte créé. Demande envoyée à l’administration (en attente de validation).");
-
-      // On déconnecte : tant que pas validé, pas d’accès.
-      await signOut(auth);
+      setMsg(
+        "✅ Demande envoyée avec succès.\n" +
+        "Votre compte sera activé après validation par l’administration DGPE."
+      );
 
     } catch (e) {
-      setMsg("❌ " + e.message, false);
+      setMsg("❌ Erreur : " + e.message, false);
     }
   };
 
   // =========================
-  // 🔑 CONNEXION (CONTROLE)
+  // 🔑 CONNEXION
   // =========================
   btnLogin.onclick = async () => {
     const email = emailEl.value.trim();
     const password = passEl.value.trim();
 
-    if (!email || !password) return setMsg("Veuillez remplir tous les champs.", false);
+    if (!email || !password) {
+      return setMsg("Veuillez remplir tous les champs.", false);
+    }
 
     try {
-      setMsg("Connexion…");
+      setMsg("Connexion en cours…");
+
       const cred = await signInWithEmailAndPassword(auth, email, password);
 
-      // 1) Vérifier fiche admin dans users/{uid}
+      // 🔍 Vérification fiche ADMIN
       const snap = await getDoc(doc(db, "users", cred.user.uid));
 
       if (!snap.exists()) {
-        setMsg("⛔ Compte non activé. Attendez la validation Admin.", false);
         await signOut(auth);
-        return;
+        return setMsg(
+          "⛔ Compte non activé.\nVeuillez attendre la validation par l’administration DGPE.",
+          false
+        );
       }
 
-      const data = snap.data();
-      if (data.status !== "ACTIF") {
-        setMsg("⏳ Compte en attente de validation Admin.", false);
+      if (snap.data().status !== "ACTIF") {
         await signOut(auth);
-        return;
+        return setMsg(
+          "⏳ Compte en attente de validation administrative.",
+          false
+        );
       }
 
-      // ✅ OK
+      // ✅ ACCÈS AUTORISÉ
       window.location.href = "dashboard.html";
 
     } catch (e) {

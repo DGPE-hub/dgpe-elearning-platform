@@ -9,6 +9,7 @@
 
 <body class="login-page">
 
+<!-- ================= NAVBAR ================= -->
 <div class="navbar-login">
   <div class="wrap">
     <div class="logo-group">
@@ -18,16 +19,19 @@
   </div>
 </div>
 
+<!-- ================= TITRE ================= -->
 <section class="hero" style="padding-top:60px;text-align:center">
   <h1>Création de compte DGPE</h1>
   <p>Accès sécurisé par QR Code</p>
 </section>
 
+<!-- ================= FORM ================= -->
 <div class="login-wrap">
   <div class="login-card">
 
     <label>Email professionnel</label>
-    <input id="email" type="email" class="input" placeholder="prenom.nom@dgpe.gouv.ci">
+    <input id="email" type="email" class="input"
+           placeholder="prenom.nom@dgpe.gouv.ci">
 
     <label>Mot de passe</label>
     <input id="password" type="password" class="input">
@@ -36,20 +40,26 @@
       Créer mon compte
     </button>
 
-    <p id="msg" style="margin-top:15px;font-size:13px;opacity:.8"></p>
+    <p id="msg" style="margin-top:14px;font-size:13px;opacity:.8"></p>
 
   </div>
 </div>
 
+<!-- ================= FIREBASE ================= -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
   import {
     getAuth,
-    createUserWithEmailAndPassword,
-    updateProfile
+    createUserWithEmailAndPassword
   } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+  import {
+    getFirestore,
+    doc,
+    setDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-  // 🔐 Firebase
+  // 🔐 Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyDLeMFoRoclFnfubLqhJBvwtySxLttyHqs",
     authDomain: "dgpe-elearning.firebaseapp.com",
@@ -61,12 +71,13 @@
 
   const app  = initializeApp(firebaseConfig);
   const auth = getAuth(app);
+  const db   = getFirestore(app);
 
   const emailInput = document.getElementById("email");
   const passInput  = document.getElementById("password");
   const msg        = document.getElementById("msg");
 
-  // 🔑 Vérification du token QR
+  // ================= QR TOKEN =================
   const params = new URLSearchParams(window.location.search);
   const token  = params.get("token");
 
@@ -76,13 +87,14 @@
   ];
 
   if (!token || !TOKENS_VALIDES.includes(token)) {
-    document.body.innerHTML =
-      "<h2 style='text-align:center;margin-top:80px'>⛔ Accès refusé</h2>" +
-      "<p style='text-align:center'>QR Code invalide ou expiré.</p>";
-    throw new Error("Token invalide");
+    document.body.innerHTML = `
+      <h2 style="text-align:center;margin-top:80px">⛔ Accès refusé</h2>
+      <p style="text-align:center">QR Code invalide ou expiré.</p>
+    `;
+    throw new Error("Token QR invalide");
   }
 
-  // 🚀 Création du compte
+  // ================= CREATION COMPTE =================
   document.getElementById("btnCreate").onclick = async () => {
     if (!emailInput.value || !passInput.value) {
       alert("Veuillez remplir tous les champs.");
@@ -90,24 +102,30 @@
     }
 
     try {
+      // 1️⃣ Création Firebase Auth
       const cred = await createUserWithEmailAndPassword(
         auth,
         emailInput.value.trim(),
         passInput.value.trim()
       );
 
-      // rôle par défaut
-      await updateProfile(cred.user, {
-        displayName: "Agent DGPE"
+      // 2️⃣ Enregistrement Firestore (clé du système)
+      await setDoc(doc(db, "users", cred.user.uid), {
+        email: emailInput.value.trim(),
+        role: "AGENT",
+        status: "EN_ATTENTE",
+        createdVia: "QR_CODE",
+        createdAt: serverTimestamp()
       });
 
-      msg.innerHTML =
-        "✅ Compte créé avec succès.<br>" +
-        "➡️ Vous pouvez maintenant vous connecter.";
+      msg.innerHTML = `
+        ✅ Compte créé avec succès.<br>
+        ⏳ En attente de validation par l’administration DGPE.
+      `;
 
       setTimeout(() => {
         window.location.href = "login.html";
-      }, 2000);
+      }, 2500);
 
     } catch (e) {
       alert("Erreur : " + e.message);

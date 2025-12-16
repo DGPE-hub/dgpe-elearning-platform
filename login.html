@@ -30,29 +30,45 @@
   <div class="login-card">
 
     <label>Email</label>
-    <input id="email" type="email" class="input" placeholder="prenom.nom@dgpe.gouv.ci">
+    <input id="email" type="email" class="input"
+           placeholder="prenom.nom@dgpe.gouv.ci">
 
     <label>Mot de passe</label>
     <input id="password" type="password" class="input">
 
-    <button class="btn btn-primary" id="btnLogin">Connexion</button>
+    <button class="btn btn-primary" id="btnLogin">
+      Connexion
+    </button>
+
     <br><br>
-    <button class="btn btn-secondary" id="btnRegister">Créer un compte</button>
+
+    <button class="btn btn-secondary" id="btnRegister">
+      Créer un compte
+    </button>
+
+    <br><br>
+
+    <button class="btn btn-secondary" id="btnResend">
+      Renvoyer l’email de vérification
+    </button>
 
   </div>
 </div>
 
 <!-- ================= FIREBASE ================= -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import { initializeApp } from
+    "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+
   import {
     getAuth,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     sendEmailVerification
-  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+  } from
+    "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
-  // 🔐 CONFIG FIREBASE (VALIDÉE)
+  // 🔐 CONFIG FIREBASE
   const firebaseConfig = {
     apiKey: "AIzaSyDLeMFoRoclFnfubLqhJBvwtySxLttyHqs",
     authDomain: "dgpe-elearning.firebaseapp.com",
@@ -62,15 +78,15 @@
     appId: "1:564422941000:web:f5232cd0cebafb6aaf7b7d"
   };
 
-  const app = initializeApp(firebaseConfig);
+  const app  = initializeApp(firebaseConfig);
   const auth = getAuth(app);
 
-  const emailInput = document.getElementById("email");
+  const emailInput    = document.getElementById("email");
   const passwordInput = document.getElementById("password");
 
   // ================= INSCRIPTION =================
-  document.getElementById("btnRegister").addEventListener("click", async () => {
-    const email = emailInput.value.trim();
+  document.getElementById("btnRegister").onclick = async () => {
+    const email    = emailInput.value.trim();
     const password = passwordInput.value.trim();
 
     if (!email || !password) {
@@ -79,25 +95,25 @@
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCred =
+        await createUserWithEmailAndPassword(auth, email, password);
 
-      // 📩 ENVOI EMAIL DE VÉRIFICATION
-      await sendEmailVerification(userCredential.user);
+      await sendEmailVerification(userCred.user);
 
       alert(
-        "Compte créé avec succès ✅\n\n" +
-        "Un email de vérification a été envoyé.\n" +
-        "Veuillez vérifier votre boîte Outlook avant de vous connecter."
+        "✅ Compte créé avec succès\n\n" +
+        "📩 Un email de vérification vient d’être envoyé.\n" +
+        "⚠️ Utilisez uniquement le DERNIER mail reçu."
       );
 
-    } catch (error) {
-      alert("Erreur : " + error.message);
+    } catch (e) {
+      alert("Erreur : " + e.message);
     }
-  });
+  };
 
   // ================= CONNEXION =================
-  document.getElementById("btnLogin").addEventListener("click", async () => {
-    const email = emailInput.value.trim();
+  document.getElementById("btnLogin").onclick = async () => {
+    const email    = emailInput.value.trim();
     const password = passwordInput.value.trim();
 
     if (!email || !password) {
@@ -106,21 +122,41 @@
     }
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCred =
+        await signInWithEmailAndPassword(auth, email, password);
 
-      // 🔒 BLOQUER SI EMAIL NON VÉRIFIÉ
-      if (!userCredential.user.emailVerified) {
-        alert("Veuillez vérifier votre adresse email avant de vous connecter.");
+      if (!userCred.user.emailVerified) {
+        alert(
+          "⚠️ Adresse email non vérifiée.\n\n" +
+          "Cliquez sur « Renvoyer l’email de vérification »."
+        );
         return;
       }
 
-      // ✅ ACCÈS AUTORISÉ
+      // ✅ Accès autorisé
       window.location.href = "dashboard.html";
 
-    } catch (error) {
-      alert("Connexion refusée : " + error.message);
+    } catch (e) {
+      alert("Connexion refusée : " + e.message);
     }
-  });
+  };
+
+  // ================= RENVOI EMAIL =================
+  document.getElementById("btnResend").onclick = async () => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("Connectez-vous d’abord.");
+      return;
+    }
+
+    try {
+      await sendEmailVerification(user);
+      alert("📩 Nouvel email de vérification envoyé.");
+    } catch (e) {
+      alert("Erreur : " + e.message);
+    }
+  };
 </script>
 
 </body>

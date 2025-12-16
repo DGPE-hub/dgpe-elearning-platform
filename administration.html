@@ -2,96 +2,167 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Administration – DGPE</title>
-
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="stylesheet" href="./style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 30px;
-      background: white;
-    }
-
-    th, td {
-      border: 1px solid #ddd;
-      padding: 12px;
-      text-align: center;
-    }
-
-    th {
-      background: #0b2a4a;
-      color: white;
-    }
-
-    .btn-danger {
-      background: #e53935;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .btn-danger:hover {
-      background: #c62828;
-    }
+    table{width:100%;border-collapse:collapse;margin-top:20px;background:#fff}
+    th,td{border:1px solid #ddd;padding:10px;text-align:center;font-size:14px}
+    th{background:#0b2a4a;color:#fff}
+    .btn{border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700}
+    .ok{background:#1b5e20;color:#fff}
+    .no{background:#c62828;color:#fff}
+    .wrap{max-width:1050px;margin:0 auto;padding:0 16px}
+    .card{background:rgba(255,255,255,.96);padding:18px;border-radius:14px;margin-top:25px}
+    #msg{margin-top:12px;font-weight:700}
   </style>
 </head>
 
 <body>
 
-<!-- ✅ NAVBAR -->
-<div class="navbar">
+<header class="navbar">
   <div class="wrap">
     <div class="logo-group">
-    <img src="assets/img/dgpe-logo.png" class="logo" alt="DGPE">
-      <span class="brand">e-Learning</span>
+      <img src="assets/img/dgpe-logo.png" class="logo" alt="DGPE">
+      <span class="brand">Administration</span>
     </div>
-
     <nav class="nav">
-      <a href="index.html">Accueil</a>
-      <a href="catalogue.html">Catalogue</a>
-      <a href="module.html">Module</a>
       <a href="dashboard.html">Dashboard</a>
-      <a href="administration.html">Administration</a>
-      <a href="login.html" class="pill">Déconnexion</a>
+      <a href="#" class="pill" id="btnLogout">Déconnexion</a>
     </nav>
   </div>
-</div>
+</header>
 
+<section class="wrap">
+  <div class="card">
+    <h1>📋 Demandes de création de compte</h1>
+    <p style="opacity:.8;margin-top:-6px">Seules les demandes <b>PENDING</b> s’affichent.</p>
 
+    <table>
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>UID</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
 
-<!-- ✅ CONTENU ADMIN -->
-<div class="page">
-  <div class="panel">
-    <h2>Administration</h2>
-    <p>Gestion des utilisateurs, modules et inscriptions</p>
-
-    <div class="cards" style="margin-top:10px">
-      <div class="card"><h3>Utilisateurs</h3><p>Créer / modifier / désactiver</p></div>
-      <div class="card"><h3>Catalogue</h3><p>Gérer les fiches & domaines</p></div>
-      <div class="card"><h3>Sessions</h3><p>Planifier & suivre</p></div>
-    </div>
+    <div id="msg"></div>
   </div>
-</div>
+</section>
 
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+  import {
+    getFirestore,
+    collection,
+    query,
+    where,
+    getDocs,
+    doc,
+    setDoc,
+    updateDoc,
+    deleteDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
+  const firebaseConfig = {
+    apiKey: "AIzaSyDLeMFoRoclFnfubLqhJBvwtySxLttyHqs",
+    authDomain: "dgpe-elearning.firebaseapp.com",
+    projectId: "dgpe-elearning",
+    storageBucket: "dgpe-elearning.appspot.com",
+    messagingSenderId: "564422941000",
+    appId: "1:564422941000:web:f5232cd0cebafb6aaf7b7d"
+  };
 
-<!-- ✅ TABLEAU DES INSCRIPTIONS -->
-<section class="wrap" style="padding:40px 0">
-  <h2>📋 Tableau des inscriptions</h2>
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-  <table>
-    <thead>
-      <tr>
-        <th>Utilisateur</th>
-        <th>Module</th>
-        <th>Date</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody id="tableInscriptions"></tbody>
+  const tbody = document.getElementById("tbody");
+  const msg = document.getElementById("msg");
+
+  function setMsg(t, ok=true){
+    msg.style.color = ok ? "#1b5e20" : "#c62828";
+    msg.textContent = t;
+  }
+
+  async function loadPending(){
+    tbody.innerHTML = "<tr><td colspan='4'>Chargement…</td></tr>";
+
+    const q = query(collection(db, "user_requests"), where("status", "==", "PENDING"));
+    const snap = await getDocs(q);
+
+    if (snap.empty){
+      tbody.innerHTML = "<tr><td colspan='4'>Aucune demande en attente</td></tr>";
+      return;
+    }
+
+    tbody.innerHTML = "";
+    snap.forEach(d => {
+      const r = d.data();
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.email || ""}</td>
+        <td style="font-family:monospace;font-size:12px">${r.uid}</td>
+        <td>${r.createdAt?.toDate ? r.createdAt.toDate().toLocaleString() : ""}</td>
+        <td>
+          <button class="btn ok" data-uid="${r.uid}" data-email="${r.email}">✅ Activer</button>
+          <button class="btn no" data-uid="${r.uid}">❌ Refuser</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ✅ Activer / Refuser
+  tbody.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+
+    const uid = btn.dataset.uid;
+    const email = btn.dataset.email || "";
+
+    try {
+      if (btn.classList.contains("ok")) {
+        // 1) Créer/MAJ la fiche "users/{uid}"
+        await setDoc(doc(db, "users", uid), {
+          uid,
+          email,
+          role: "AGENT",
+          status: "ACTIF",
+          activatedAt: serverTimestamp()
+        }, { merge: true });
+
+        // 2) Marquer la demande comme traitée
+        await updateDoc(doc(db, "user_requests", uid), { status: "APPROVED" });
+
+        setMsg("✅ Compte activé : " + email, true);
+      }
+
+      if (btn.classList.contains("no")) {
+        await updateDoc(doc(db, "user_requests", uid), { status: "REFUSED" });
+        setMsg("❌ Demande refusée.", false);
+      }
+
+      await loadPending();
+
+    } catch (err) {
+      setMsg("Erreur : " + err.message, false);
+    }
+  });
+
+  document.getElementById("btnLogout").onclick = async () => {
+    await signOut(auth);
+    window.location.href = "login.html";
+  };
+
+  loadPending();
+</script>
+
+</body>
+</html>

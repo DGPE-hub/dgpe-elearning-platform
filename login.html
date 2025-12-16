@@ -36,16 +36,10 @@
     <label>Mot de passe</label>
     <input id="password" type="password" class="input">
 
-    <button class="btn btn-primary" id="btnLogin">
-      Connexion
-    </button>
-
+    <button class="btn btn-primary" id="btnLogin">Connexion</button>
     <br><br>
 
-    <button class="btn btn-secondary" id="btnRegister">
-      Créer un compte
-    </button>
-
+    <button class="btn btn-secondary" id="btnRegister">Créer un compte</button>
     <br><br>
 
     <button class="btn btn-secondary" id="btnResend" style="display:none">
@@ -66,10 +60,11 @@
     getAuth,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
-    sendEmailVerification
+    sendEmailVerification,
+    signOut
   } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
-  // 🔐 Firebase config
+  // 🔐 Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyDLeMFoRoclFnfubLqhJBvwtySxLttyHqs",
     authDomain: "dgpe-elearning.firebaseapp.com",
@@ -86,8 +81,16 @@
   const passwordInput = document.getElementById("password");
   const btnResend     = document.getElementById("btnResend");
 
+  // 🔴 IMPORTANT : on nettoie toute session résiduelle
+  await signOut(auth);
+
   // ================= INSCRIPTION =================
-  document.getElementById("btnRegister").onclick = async () => {
+  btnRegister.onclick = async () => {
+    if (!emailInput.value || !passwordInput.value) {
+      alert("Veuillez remplir tous les champs.");
+      return;
+    }
+
     try {
       const cred = await createUserWithEmailAndPassword(
         auth,
@@ -98,18 +101,26 @@
       await sendEmailVerification(cred.user);
 
       alert(
-        "✅ Compte créé avec succès.\n\n" +
+        "✅ Compte créé.\n\n" +
         "📩 Un email de vérification a été envoyé.\n" +
         "➡️ Cliquez sur le lien reçu,\n" +
         "➡️ puis revenez vous connecter ici."
       );
+
+      await signOut(auth); // 🔐 reset propre
+
     } catch (e) {
       alert("Erreur : " + e.message);
     }
   };
 
   // ================= CONNEXION =================
-  document.getElementById("btnLogin").onclick = async () => {
+  btnLogin.onclick = async () => {
+    if (!emailInput.value || !passwordInput.value) {
+      alert("Veuillez remplir tous les champs.");
+      return;
+    }
+
     try {
       const cred = await signInWithEmailAndPassword(
         auth,
@@ -117,14 +128,16 @@
         passwordInput.value.trim()
       );
 
-      await cred.user.reload();
+      await cred.user.reload(); // 🔴 OBLIGATOIRE
 
       if (!cred.user.emailVerified) {
         btnResend.style.display = "block";
         alert(
           "⚠️ Adresse email non vérifiée.\n\n" +
-          "Veuillez vérifier votre boîte mail."
+          "Veuillez vérifier votre boîte mail\n" +
+          "puis vous reconnecter."
         );
+        await signOut(auth);
         return;
       }
 
@@ -138,19 +151,12 @@
 
   // ================= RENVOI EMAIL =================
   btnResend.onclick = async () => {
-    if (!auth.currentUser) {
-      alert("Veuillez vous reconnecter d’abord.");
-      return;
-    }
-
-    await sendEmailVerification(auth.currentUser);
     alert(
-      "📩 Nouvel email de vérification envoyé.\n\n" +
-      "⚠️ Utilisez uniquement le DERNIER email reçu."
+      "ℹ️ Connectez-vous à nouveau\n" +
+      "pour demander un nouvel email de vérification."
     );
   };
 </script>
 
 </body>
 </html>
-

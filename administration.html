@@ -5,6 +5,7 @@
   <title>Administration – DGPE</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="stylesheet" href="./style.css">
+
   <style>
     table{width:100%;border-collapse:collapse;margin-top:20px;background:#fff}
     th,td{border:1px solid #ddd;padding:10px;text-align:center;font-size:14px}
@@ -12,7 +13,7 @@
     .btn{border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700}
     .ok{background:#1b5e20;color:#fff}
     .no{background:#c62828;color:#fff}
-    .wrap{max-width:1050px;margin:0 auto;padding:0 16px}
+    .wrap{max-width:1100px;margin:0 auto;padding:0 16px}
     .card{background:rgba(255,255,255,.96);padding:18px;border-radius:14px;margin-top:25px}
     #msg{margin-top:12px;font-weight:700}
   </style>
@@ -20,6 +21,7 @@
 
 <body>
 
+<!-- ================= NAVBAR ================= -->
 <header class="navbar">
   <div class="wrap">
     <div class="logo-group">
@@ -33,10 +35,13 @@
   </div>
 </header>
 
+<!-- ================= CONTENU ================= -->
 <section class="wrap">
   <div class="card">
     <h1>📋 Demandes de création de compte</h1>
-    <p style="opacity:.8;margin-top:-6px">Seules les demandes <b>PENDING</b> s’affichent.</p>
+    <p style="opacity:.8;margin-top:-6px">
+      Seules les demandes <b>PENDING</b> sont affichées.
+    </p>
 
     <table>
       <thead>
@@ -54,6 +59,13 @@
   </div>
 </section>
 
+<!-- ================= AUTH FIREBASE ================= -->
+<script type="module" src="assets/js/auth.js"></script>
+<script>
+  protectAdminPage(); // 🔒 PROTECTION ABSOLUE ADMIN
+</script>
+
+<!-- ================= FIREBASE LOGIQUE ================= -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
   import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
@@ -66,35 +78,37 @@
     doc,
     setDoc,
     updateDoc,
-    deleteDoc,
     serverTimestamp
   } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
+  /* ================= CONFIG ================= */
   const firebaseConfig = {
     apiKey: "AIzaSyDLeMFoRoclFnfubLqhJBvwtySxLttyHqs",
     authDomain: "dgpe-elearning.firebaseapp.com",
-    projectId: "dgpe-elearning",
-    storageBucket: "dgpe-elearning.appspot.com",
-    messagingSenderId: "564422941000",
-    appId: "1:564422941000:web:f5232cd0cebafb6aaf7b7d"
+    projectId: "dgpe-elearning"
   };
 
-  const app = initializeApp(firebaseConfig);
+  const app  = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-  const db = getFirestore(app);
+  const db   = getFirestore(app);
 
   const tbody = document.getElementById("tbody");
-  const msg = document.getElementById("msg");
+  const msg   = document.getElementById("msg");
 
   function setMsg(t, ok=true){
     msg.style.color = ok ? "#1b5e20" : "#c62828";
     msg.textContent = t;
   }
 
+  /* ================= CHARGER LES DEMANDES ================= */
   async function loadPending(){
     tbody.innerHTML = "<tr><td colspan='4'>Chargement…</td></tr>";
 
-    const q = query(collection(db, "user_requests"), where("status", "==", "PENDING"));
+    const q = query(
+      collection(db, "user_requests"),
+      where("status", "==", "PENDING")
+    );
+
     const snap = await getDocs(q);
 
     if (snap.empty){
@@ -103,33 +117,43 @@
     }
 
     tbody.innerHTML = "";
+
     snap.forEach(d => {
       const r = d.data();
       const tr = document.createElement("tr");
+
       tr.innerHTML = `
-        <td>${r.email || ""}</td>
+        <td>${r.email}</td>
         <td style="font-family:monospace;font-size:12px">${r.uid}</td>
         <td>${r.createdAt?.toDate ? r.createdAt.toDate().toLocaleString() : ""}</td>
         <td>
-          <button class="btn ok" data-uid="${r.uid}" data-email="${r.email}">✅ Activer</button>
-          <button class="btn no" data-uid="${r.uid}">❌ Refuser</button>
+          <button class="btn ok" data-uid="${r.uid}" data-email="${r.email}">
+            ✅ Activer
+          </button>
+          <button class="btn no" data-uid="${r.uid}">
+            ❌ Refuser
+          </button>
         </td>
       `;
+
       tbody.appendChild(tr);
     });
   }
 
-  // ✅ Activer / Refuser
+  /* ================= ACTIONS ADMIN ================= */
   tbody.addEventListener("click", async (e) => {
     const btn = e.target.closest("button");
     if (!btn) return;
 
-    const uid = btn.dataset.uid;
+    const uid   = btn.dataset.uid;
     const email = btn.dataset.email || "";
 
     try {
+
+      // ✅ ACTIVER
       if (btn.classList.contains("ok")) {
-        // 1) Créer/MAJ la fiche "users/{uid}"
+
+        // 1) Création fiche officielle utilisateur
         await setDoc(doc(db, "users", uid), {
           uid,
           email,
@@ -138,14 +162,21 @@
           activatedAt: serverTimestamp()
         }, { merge: true });
 
-        // 2) Marquer la demande comme traitée
-        await updateDoc(doc(db, "user_requests", uid), { status: "APPROVED" });
+        // 2) Mise à jour de la demande
+        await updateDoc(doc(db, "user_requests", uid), {
+          status: "APPROVED",
+          processedAt: serverTimestamp()
+        });
 
         setMsg("✅ Compte activé : " + email, true);
       }
 
+      // ❌ REFUSER
       if (btn.classList.contains("no")) {
-        await updateDoc(doc(db, "user_requests", uid), { status: "REFUSED" });
+        await updateDoc(doc(db, "user_requests", uid), {
+          status: "REFUSED",
+          processedAt: serverTimestamp()
+        });
         setMsg("❌ Demande refusée.", false);
       }
 
@@ -156,9 +187,10 @@
     }
   });
 
+  /* ================= LOGOUT ================= */
   document.getElementById("btnLogout").onclick = async () => {
     await signOut(auth);
-    window.location.href = "login.html";
+    window.location.replace("login.html");
   };
 
   loadPending();

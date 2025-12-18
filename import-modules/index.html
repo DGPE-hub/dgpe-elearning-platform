@@ -3,30 +3,57 @@
 <head>
   <meta charset="utf-8">
   <title>Import des modules DGPE</title>
+
   <style>
     body {
-      margin: 0;
+      background: #0b1e34;
+      color: #eaf2ff;
       font-family: Consolas, monospace;
-      background: #061b33;
-      color: #fff;
+      padding: 40px;
     }
-    h1 { color: #f5c542; }
+    h1 {
+      color: #f5c542;
+    }
     pre {
-      background: rgba(0,0,0,.35);
-      padding: 15px;
+      background: rgba(255,255,255,0.05);
+      padding: 20px;
       border-radius: 8px;
+      margin-top: 20px;
       white-space: pre-wrap;
     }
   </style>
 </head>
 
 <body>
-  <h1>Import des modules DGPE</h1>
-  <p>Création des modules officiels 2026.</p>
 
-  <pre id="log">⏳ Lancement du script...\n</pre>
+<h1>Import des modules DGPE</h1>
+<p>Création des modules officiels 2026.</p>
 
-  <!-- 🔥 SCRIPT UNIQUE GARANTI -->
-  <script type="module" src="./import-modules.js"></script>
+<pre id="log">⏳ Initialisation...</pre>
+
+<!-- 🔥 Firebase + Import -->
+<script type="module">
+
+  // 🔹 Firebase core
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+
+  // 🔹 Ton script d’import
+  import "./import-modules.js";
+
+  // 🔐 CONFIG FIREBASE DGPE (⚠️ LA TIENNE EXACTE)
+  const firebaseConfig = {
+    apiKey: "XXX",
+    authDomain: "dgpe-elearning.firebaseapp.com",
+    projectId: "dgpe-elearning",
+    storageBucket: "dgpe-elearning.appspot.com",
+    messagingSenderId: "XXX",
+    appId: "XXX"
+  };
+
+  // 🚀 INITIALISATION OBLIGATOIRE
+  initializeApp(firebaseConfig);
+
+</script>
+
 </body>
 </html>

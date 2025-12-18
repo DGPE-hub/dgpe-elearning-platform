@@ -18,14 +18,12 @@
       <span class="brand">e-Learning</span>
     </div>
 
-    <!-- MENU PUBLIC -->
     <nav class="nav" id="nav-public">
       <a href="index.html">Accueil</a>
       <a href="catalogue.html" class="active">Catalogue</a>
       <a href="login.html" class="pill">Connexion</a>
     </nav>
 
-    <!-- MENU PRIVÉ -->
     <nav class="nav hidden" id="nav-private">
       <a href="index.html">Accueil</a>
       <a href="catalogue.html" class="active">Catalogue</a>
@@ -43,10 +41,7 @@
   <section class="panel">
     <h2>Catalogue des formations</h2>
 
-    <input
-      id="searchInput"
-      class="input"
-      placeholder="Rechercher un module…">
+    <input id="searchInput" class="input" placeholder="Rechercher un module…">
 
     <select id="filterDomaine" class="input">
       <option value="">Tous domaines</option>
@@ -75,18 +70,10 @@
 <!-- ================= FIREBASE ================= -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  query,
-  where
-} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-import {
-  getAuth,
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { getFirestore, collection, getDocs, query, where } 
+  from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signOut } 
+  from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
 /* ================= CONFIG ================= */
 const firebaseConfig = {
@@ -105,47 +92,29 @@ const navPublic  = document.getElementById("nav-public");
 const navPrivate = document.getElementById("nav-private");
 const btnLogout  = document.getElementById("btnLogout");
 
-/* ================= AUTH UI ================= */
+/* ================= AUTH ================= */
 onAuthStateChanged(auth, user => {
-  if (user) {
-    navPublic.classList.add("hidden");
-    navPrivate.classList.remove("hidden");
-  } else {
-    navPublic.classList.remove("hidden");
-    navPrivate.classList.add("hidden");
-  }
+  navPublic.classList.toggle("hidden", !!user);
+  navPrivate.classList.toggle("hidden", !user);
 });
 
 btnLogout.onclick = async () => {
   await signOut(auth);
-  window.location.href = "login.html";
+  location.href = "login.html";
 };
 
 /* ================= CHARGER MODULES ================= */
 async function chargerModules() {
-  const recherche = document
-    .getElementById("searchInput")
-    .value
-    .toLowerCase();
-
-  const domaine = document
-    .getElementById("filterDomaine")
-    .value;
+  const recherche = searchInput.value.toLowerCase();
+  const domaine   = filterDomaine.value;
 
   grid.innerHTML = "Chargement des modules…";
 
   try {
-    let q = query(
-      collection(db, "modules"),
-      where("actif", "==", true)
-    );
+    let q = collection(db, "modules");
 
     if (domaine) {
-      q = query(
-        collection(db, "modules"),
-        where("actif", "==", true),
-        where("domaine", "==", domaine)
-      );
+      q = query(q, where("domaine", "==", domaine));
     }
 
     const snap = await getDocs(q);
@@ -154,15 +123,21 @@ async function chargerModules() {
     snap.forEach(docu => {
       const m = docu.data();
 
+      if (!m.titre) return;
       if (recherche && !m.titre.toLowerCase().includes(recherche)) return;
+
+      const dureeAffichee =
+        m.duree ? m.duree :
+        m.nbHeures ? m.nbHeures + " h" :
+        "—";
 
       html += `
         <a href="module.html?id=${docu.id}" class="card">
           <h3>${m.titre}</h3>
           <p style="color:#a7b1bd">
-            ${m.domaine} • ${m.duree}
+            ${m.domaine || "—"} • ${dureeAffichee}
           </p>
-          <p>${m.resume}</p>
+          <p>${m.resume || ""}</p>
         </a>
       `;
     });
@@ -171,16 +146,13 @@ async function chargerModules() {
 
   } catch (e) {
     console.error(e);
-    grid.innerHTML = "❌ Erreur lors du chargement des modules.";
+    grid.innerHTML = "❌ Erreur lors du chargement.";
   }
 }
 
-/* ================= EVENTS ================= */
-document.getElementById("btnSearch").onclick = chargerModules;
+btnSearch.onclick = chargerModules;
 chargerModules();
-
 </script>
 
-<script src="assets/js/app.js"></script>
 </body>
 </html>

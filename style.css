@@ -274,3 +274,89 @@ body.login-page {
   .nav { display: none; }
   .burger { display: block; }
 }
+/* ======================================================
+   ADMIN OVERRIDE (SUPPRIME LE "BLOC BLANC")
+   À mettre TOUT EN BAS de style.css
+====================================================== */
+body.admin-page .page,
+body.admin-page .section {
+  max-width: 1200px;
+  margin: 28px auto;
+  padding: 0 20px;
+}
+
+/* Le grand conteneur blanc (card/panel/wrap) -> glass */
+body.admin-page .card,
+body.admin-page .panel,
+body.admin-page .container,
+body.admin-page .box,
+body.admin-page .admin-card,
+body.admin-page .admin-panel,
+body.admin-page .table-card,
+body.admin-page .table-wrap {
+  background: rgba(255,255,255,.06) !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  color: #e6edf3 !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 18px 50px rgba(0,0,0,.35) !important;
+}
+
+/* Si un overlay blanc est appliqué via ::before/::after */
+body.admin-page .card::before,
+body.admin-page .card::after,
+body.admin-page .panel::before,
+body.admin-page .panel::after,
+body.admin-page .admin-card::before,
+body.admin-page .admin-card::after,
+body.admin-page .admin-panel::before,
+body.admin-page .admin-panel::after,
+body.admin-page .table-card::before,
+body.admin-page .table-card::after,
+body.admin-page .table-wrap::before,
+body.admin-page .table-wrap::after {
+  background: transparent !important;
+  opacity: 0 !important;
+  content: none !important;
+}
+
+/* Titres dans l’admin */
+body.admin-page h1,
+body.admin-page h2,
+body.admin-page h3 {
+  color: #ffffff !important;
+  text-shadow: 0 0 12px rgba(30,102,255,.25);
+}
+
+/* Table : enlève le fond blanc */
+body.admin-page table,
+body.admin-page thead,
+body.admin-page tbody,
+body.admin-page tr,
+body.admin-page th,
+body.admin-page td {
+  background: transparent !important;
+  color: #e6edf3 !important;
+}
+
+/* En-tête table (reste bleu DGPE) */
+body.admin-page thead th {
+  background: rgba(5,20,36,.65) !important;
+  border-bottom: 1px solid rgba(255,255,255,.12) !important;
+}
+
+/* Lignes */
+body.admin-page tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,.08) !important;
+}
+body.admin-page tbody tr:hover {
+  background: rgba(255,255,255,.06) !important;
+}
+
+/* Texte “Aucune demande…” (souvent trop clair sur fond) */
+body.admin-page .muted,
+body.admin-page .empty,
+body.admin-page .empty-state,
+body.admin-page .hint {
+  color: rgba(230,237,243,.78) !important;
+}

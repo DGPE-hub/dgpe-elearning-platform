@@ -1,85 +1,35 @@
-/* ===============================
-   FIREBASE SDK
-================================ */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Import des modules DGPE</title>
 
-/* ===============================
-   CONFIG FIREBASE DGPE
-   ⚠️ METS TES VRAIES CLÉS
-================================ */
-const firebaseConfig = {
-  apiKey: "TA_API_KEY",
-  authDomain: "dgpe-elearning.firebaseapp.com",
-  projectId: "dgpe-elearning",
-  storageBucket: "dgpe-elearning.appspot.com",
-  messagingSenderId: "XXXXXXX",
-  appId: "XXXXXXX"
-};
+  <style>
+    body {
+      background:#071b33;
+      color:#e8f1ff;
+      font-family: Consolas, monospace;
+      padding: 40px;
+    }
+    h1 { color:#ffd34d }
+    pre {
+      margin-top:20px;
+      background:#021024;
+      padding:20px;
+      border-radius:6px;
+      white-space:pre-wrap;
+    }
+  </style>
+</head>
 
-/* ===============================
-   INITIALISATION
-================================ */
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+<body>
 
-/* ===============================
-   MODULES DGPE OFFICIELS 2026
-================================ */
-const MODULES_DGPE = [
-  { titre: "Gouvernance stratégique et analyse financière", domaine: "Gouvernance", duree: "4 j" },
-  { titre: "Pilotage stratégique", domaine: "Gouvernance", duree: "4 j" },
-  { titre: "Audit & conformité", domaine: "Gouvernance", duree: "3 j" },
-  { titre: "Performance & KPI", domaine: "Performance", duree: "2 j" },
-  { titre: "Transformation digitale", domaine: "Digital", duree: "3 j" },
-  { titre: "IA & Décision", domaine: "Digital", duree: "2 j" },
-  { titre: "Leadership", domaine: "Management", duree: "2 j" },
-  { titre: "Communication de crise", domaine: "Management", duree: "2 j" },
-  { titre: "RSE : Concevoir et piloter une stratégie durable", domaine: "Gouvernance", duree: "3 j" },
-  { titre: "Manager le changement durable", domaine: "Management", duree: "2 j" }
-];
+<h1>Import des modules DGPE</h1>
+<p>Création des modules officiels 2026.</p>
 
-/* ===============================
-   LOG UTILITAIRE
-================================ */
-function log(msg) {
-  const el = document.getElementById("log");
-  if (el) el.textContent += msg + "\n";
-}
+<pre id="log">⏳ Lancement du script...</pre>
 
-/* ===============================
-   IMPORT DANS FIRESTORE
-================================ */
-async function creerModulesDGPE() {
-  log("Initialisation...");
-  log("Connexion à Firestore OK");
+<script type="module" src="./import-modules.js"></script>
 
-  let count = 0;
-
-  for (const m of MODULES_DGPE) {
-    await addDoc(collection(db, "modules"), {
-      titre: m.titre,
-      domaine: m.domaine,
-      duree: m.duree,
-      actif: true,
-      createdAt: serverTimestamp()
-    });
-
-    log(`✔ ${m.titre} → ${m.duree}`);
-    count++;
-  }
-
-  log("=============================");
-  log(`Modules créés : ${count}`);
-  log("===== TERMINÉ =====");
-}
-
-/* ===============================
-   LANCEMENT
-================================ */
-creerModulesDGPE();
+</body>
+</html>

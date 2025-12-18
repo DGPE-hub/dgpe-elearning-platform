@@ -8,35 +8,80 @@ import {
 const db = getFirestore();
 
 /* 🔵 Mapping officiel DGPE – Plan de formation 2026 */
-const dureesDGPE = {
-  "Gouvernance stratégique et analyse financière": "4 j",
-  "Pilotage stratégique": "4 j",
-  "Audit & conformité": "3 j",
-  "Performance & KPI": "2 j",
-  "Transformation digitale": "3 j",
-  "IA & Décision": "2 j",
-  "Leadership": "2 j",
-  "Communication de crise": "2 j",
-  "RSE : Concevoir et piloter une stratégie durable": "3 j",
-  "Manager le changement durable": "2 j"
-};
+const MODULES_DGPE = [
+  {
+    titre: "Gouvernance stratégique et analyse financière",
+    domaine: "Gouvernance",
+    duree: "4 j"
+  },
+  {
+    titre: "Pilotage stratégique",
+    domaine: "Gouvernance",
+    duree: "4 j"
+  },
+  {
+    titre: "Audit & conformité",
+    domaine: "Gouvernance",
+    duree: "3 j"
+  },
+  {
+    titre: "Performance & KPI",
+    domaine: "Performance",
+    duree: "2 j"
+  },
+  {
+    titre: "Transformation digitale",
+    domaine: "Digital",
+    duree: "3 j"
+  },
+  {
+    titre: "IA & Décision",
+    domaine: "Digital",
+    duree: "2 j"
+  },
+  {
+    titre: "Leadership",
+    domaine: "Management",
+    duree: "2 j"
+  },
+  {
+    titre: "Communication de crise",
+    domaine: "Management",
+    duree: "2 j"
+  },
+  {
+    titre: "RSE : Concevoir et piloter une stratégie durable",
+    domaine: "Gouvernance",
+    duree: "3 j"
+  },
+  {
+    titre: "Manager le changement durable",
+    domaine: "Management",
+    duree: "2 j"
+  }
+];
 
-async function corrigerDureesModules() {
+
+async function resetModulesDGPE() {
   const snap = await getDocs(collection(db, "modules"));
-  let count = 0;
 
-  for (const docSnap of snap.docs) {
-    const data = docSnap.data();
-
-    if (dureesDGPE[data.titre]) {
-      await updateDoc(docSnap.ref, {
-        duree: dureesDGPE[data.titre]
-      });
-      count++;
-    }
+  // 🔥 Supprimer tous les modules existants
+  for (const d of snap.docs) {
+    await deleteDoc(doc(db, "modules", d.id));
   }
 
-  document.body.innerHTML = `✅ ${count} modules mis à jour avec les durées DGPE.`;
+  // ✅ Réinjecter les modules officiels
+  for (const m of MODULES_DGPE) {
+    await addDoc(collection(db, "modules"), {
+      titre: m.titre,
+      domaine: m.domaine,
+      duree: m.duree,
+      resume: "",
+      actif: true
+    });
+  }
+
+  console.log("✅ Modules DGPE réinitialisés");
 }
 
-corrigerDureesModules();
+resetModulesDGPE();

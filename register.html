@@ -2,106 +2,146 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <title>Demande de compte – DGPE</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connexion – DGPE</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 
 <body class="login-page">
 
+<!-- ================= NAVBAR ================= -->
 <div class="navbar-login">
   <div class="wrap">
     <div class="logo-group">
       <img src="./assets/img/dgpe-logo.png" class="logo" alt="DGPE">
-      <span class="brand">Demande de compte</span>
+      <span class="brand">e-Learning</span>
     </div>
   </div>
 </div>
 
+<!-- ================= TITRE ================= -->
 <section class="hero" style="padding-top:60px;text-align:center">
-  <h1>Créer un compte DGPE</h1>
-  <p>Votre demande sera validée par l’administration</p>
+  <h1>Connexion</h1>
+  <p>Accédez à votre espace DGPE</p>
 </section>
 
+<!-- ================= FORM ================= -->
 <div class="login-wrap">
   <div class="login-card">
 
     <label>Email professionnel</label>
-    <input id="email" type="email" class="input" placeholder="prenom.nom@dgpe.gouv.ci">
+    <input
+      id="email"
+      type="email"
+      class="input"
+      placeholder="prenom.nom@dgpe.gouv.ci"
+      autocomplete="username"
+    >
 
     <label>Mot de passe</label>
-    <input id="password" type="password" class="input">
+    <input
+      id="password"
+      type="password"
+      class="input"
+      autocomplete="current-password"
+    >
 
-    <button class="btn btn-primary" id="btnRegister">
-      Envoyer la demande
+    <button class="btn btn-primary" id="btnLogin" type="button">
+      Connexion
     </button>
 
-    <p id="msg" style="margin-top:15px;font-size:14px"></p>
+    <br><br>
+
+    <button class="btn btn-secondary" id="btnRegister" type="button">
+      Demander un compte
+    </button>
+
+    <p id="msg" style="margin-top:14px;font-size:13px;opacity:.9"></p>
 
   </div>
 </div>
 
+<!-- ================= FIREBASE ================= -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
   import {
     getAuth,
-    createUserWithEmailAndPassword,
-    signOut
+    signInWithEmailAndPassword
   } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
   import {
     getFirestore,
     doc,
-    setDoc,
-    serverTimestamp
+    getDoc
   } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
+  // ================= CONFIG =================
   const firebaseConfig = {
     apiKey: "AIzaSyDLeMFoRoclFnfubLqhJBvwtySxLttyHqs",
     authDomain: "dgpe-elearning.firebaseapp.com",
     projectId: "dgpe-elearning"
   };
 
-  const app = initializeApp(firebaseConfig);
+  const app  = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db   = getFirestore(app);
 
-  await signOut(auth);
-
+  // ================= ELEMENTS =================
   const emailEl = document.getElementById("email");
   const passEl  = document.getElementById("password");
   const msgEl   = document.getElementById("msg");
+  const btnLogin    = document.getElementById("btnLogin");
+  const btnRegister = document.getElementById("btnRegister");
 
-  document.getElementById("btnRegister").onclick = async () => {
+  function setMsg(text, ok = true) {
+    msgEl.style.color = ok ? "#0b2a4a" : "#c62828";
+    msgEl.textContent = text;
+  }
+
+  // ================= CONNEXION =================
+  btnLogin.onclick = async () => {
     const email = emailEl.value.trim();
-    const pass  = passEl.value.trim();
+    const password = passEl.value.trim();
 
-    if (!email || !pass) {
-      msgEl.innerText = "Veuillez remplir tous les champs.";
+    if (!email || !password) {
+      setMsg("Veuillez remplir tous les champs.", false);
       return;
     }
 
-    msgEl.innerText = "Création du compte…";
+    btnLogin.disabled = true;
+    setMsg("Connexion en cours…");
 
     try {
-      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      // 🔐 Auth Firebase
+      const cred = await signInWithEmailAndPassword(auth, email, password);
 
-      await setDoc(doc(db, "users", cred.user.uid), {
-        email,
-        role: "AGENT",
-        status: "EN_ATTENTE",
-        createdAt: serverTimestamp()
-      });
+      // 📄 Vérification Firestore
+      const snap = await getDoc(doc(db, "users", cred.user.uid));
 
-      msgEl.style.color = "green";
-      msgEl.innerText =
-        "Demande envoyée avec succès. Votre compte sera activé par l’administration.";
+      if (!snap.exists()) {
+        setMsg("⛔ Compte non activé. Contactez l’administration.", false);
+        btnLogin.disabled = false;
+        return;
+      }
 
-      await signOut(auth);
+      if (snap.data().status !== "ACTIF") {
+        setMsg("⏳ Compte en attente de validation administrative.", false);
+        btnLogin.disabled = false;
+        return;
+      }
 
-    } catch (e) {
-      msgEl.style.color = "red";
-      msgEl.innerText = e.message;
+      // ✅ ACCÈS AUTORISÉ
+      window.location.href = "dashboard.html";
+
+    } catch (err) {
+      console.error(err);
+      setMsg("❌ Email ou mot de passe incorrect.", false);
+      btnLogin.disabled = false;
     }
+  };
+
+  // ================= DEMANDE DE COMPTE =================
+  btnRegister.onclick = () => {
+    window.location.href = "register.html";
   };
 </script>
 

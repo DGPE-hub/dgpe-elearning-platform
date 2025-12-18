@@ -1,3 +1,4 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import {
   getFirestore,
   collection,
@@ -6,9 +7,7 @@ import {
   doc
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-
-/* ===== CONFIG FIREBASE ===== */
+/* ================= CONFIG ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyDLeMFoRoclFnfubLqhJBvwtySxLttyHqs",
   authDomain: "dgpe-elearning.firebaseapp.com",
@@ -16,60 +15,92 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db  = getFirestore(app);
 
-/* ===== NORMALISATION ===== */
+/* ================= UI LOG ================= */
+const logBox = document.getElementById("log");
+function log(txt) {
+  console.log(txt);
+  if (logBox) logBox.textContent += "\n" + txt;
+}
+
+/* ================= NORMALISATION ================= */
 function normalize(txt = "") {
-  return txt
+  return String(txt)
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/&/g, "et")
-    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/&/g, " et ")
+    .replace(/[:]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-/* ===== RÈGLES OFFICIELLES DGPE 2026 ===== */
-const dureesDGPE = {
-  "gouvernance strategique et analyse financiere": "4 j",
-  "pilotage strategique": "4 j",
-  "audit et conformite": "3 j",
-  "performance et kpi": "2 j",
-  "transformation digitale": "3 j",
-  "ia et decision": "2 j",
-  "leadership": "2 j",
-  "communication de crise": "2 j",
-  "rse concevoir et piloter une strategie durable": "3 j",
-  "manager le changement durable": "2 j"
-};
+/* ================= MAPPING OFFICIEL DGPE ================= */
+/* ➜ MATCH PAR MOT-CLÉ (robuste) */
+const REGLES_DGPE = [
+  { key: "gouvernance", duree: "4 j" },
+  { key: "pilotage", duree: "4 j" },
+  { key: "audit", duree: "3 j" },
+  { key: "conformite", duree: "3 j" },
+  { key: "performance", duree: "2 j" },
+  { key: "kpi", duree: "2 j" },
+  { key: "transformation digitale", duree: "3 j" },
+  { key: "intelligence artificielle", duree: "2 j" },
+  { key: "ia", duree: "2 j" },
+  { key: "leadership", duree: "2 j" },
+  { key: "communication de crise", duree: "2 j" },
+  { key: "rse", duree: "3 j" },
+  { key: "developpement durable", duree: "3 j" },
+  { key: "changement", duree: "2 j" }
 ];
-/* ===== CORRECTION ===== */
-async function corrigerDurees() {
-  const snap = await getDocs(collection(db, "modules"));
-  let count = 0;
 
-  for (const d of snap.docs) {
-    const data = d.data();
-    const titre = data.titre || data.title || data.nom || "";
-    const t = normalize(titre);
-
-    const rule = rules.find(r =>
-      r.match.every(word => t.includes(word))
-    );
-
-    if (rule && data.duree !== rule.duree) {
-      await updateDoc(doc(db, "modules", d.id), {
-        duree: rule.duree
-      });
-      console.log(`✔ ${titre} → ${rule.duree}`);
-      count++;
-    } else {
-      console.log(`⏭ Ignoré : ${titre}`);
-    }
+function trouverDureeOfficielle(titre) {
+  const t = normalize(titre);
+  for (const r of REGLES_DGPE) {
+    if (t.includes(r.key)) return r.duree;
   }
-
-  document.body.innerHTML += `<p>✅ ${count} modules mis à jour.</p>`;
+  return null;
 }
 
-corrigerDurees();
+/* ================= TRAITEMENT ================= */
+async function corrigerDurees() {
+  log("Connexion à Firestore…");
+
+  const snap = await getDocs(collection(db, "modules"));
+  let total = 0;
+  let corriges = 0;
+
+  for (const d of snap.docs) {
+    total++;
+    const data = d.data();
+    const titre =
+      data.titre || data.title || data.nom || data.name || "";
+
+    if (!titre) continue;
+
+    const dureeOfficielle = trouverDureeOfficielle(titre);
+    if (!dureeOfficielle) continue;
+
+    const ref = doc(db, "modules", d.id);
+
+    await updateDoc(ref, {
+      duree: dureeOfficielle,
+      nbHeures: null,
+      heures: null
+    });
+
+    corriges++;
+    log(`✔ ${titre} → ${dureeOfficielle}`);
+  }
+
+  log("");
+  log("====== TERMINÉ ======");
+  log(`Modules analysés : ${total}`);
+  log(`Modules corrigés : ${corriges}`);
+}
+
+corrigerDurees().catch(e => {
+  console.error(e);
+  log("❌ ERREUR : " + e.message);
+});

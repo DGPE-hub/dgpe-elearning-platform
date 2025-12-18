@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Module – DGPE</title>
+  <title>Catalogue – DGPE</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
@@ -17,10 +17,18 @@
       <span class="brand">e-Learning</span>
     </div>
 
-    <nav class="nav">
+    <nav class="nav" id="nav-public">
       <a href="index.html">Accueil</a>
-      <a href="catalogue.html">Catalogue</a>
+      <a href="catalogue.html" class="active">Catalogue</a>
+      <a href="login.html" class="pill">Connexion</a>
+    </nav>
+
+    <nav class="nav hidden" id="nav-private">
+      <a href="index.html">Accueil</a>
+      <a href="catalogue.html" class="active">Catalogue</a>
       <a href="dashboard.html">Dashboard</a>
+      <a href="administration.html">Administration</a>
+      <a href="#" class="pill" id="btnLogout">Déconnexion</a>
     </nav>
   </div>
 </header>
@@ -28,8 +36,27 @@
 <!-- ================= CONTENU ================= -->
 <main class="page">
 
-  <section class="panel" id="modulePanel">
-    <p>Chargement du module…</p>
+  <section class="panel">
+    <h2>Catalogue des formations</h2>
+
+    <input id="searchInput" class="input" placeholder="Rechercher un module…">
+
+    <select id="filterDomaine" class="input">
+      <option value="">Tous domaines</option>
+      <option>Gouvernance</option>
+      <option>Management</option>
+      <option>Finance Publique</option>
+      <option>Performance</option>
+      <option>Digital</option>
+      <option>Leadership</option>
+    </select>
+
+    <button class="btn" id="btnSearch">Rechercher</button>
+  </section>
+
+  <section class="panel">
+    <h3>Résultats</h3>
+    <div class="modules-grid" id="modulesGrid"></div>
   </section>
 
 </main>
@@ -38,14 +65,11 @@
   © 2025 DGPE – Direction Générale du Portefeuille de l’État
 </footer>
 
-<!-- ================= FIREBASE ================= -->
+<!-- ================= SCRIPT ================= -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { 
-  getFirestore, 
-  doc, 
-  getDoc 
-} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
 /* ================= CONFIG ================= */
 const firebaseConfig = {
@@ -54,72 +78,95 @@ const firebaseConfig = {
   projectId: "dgpe-elearning"
 };
 
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
 
-/* ================= UTILS ================= */
-function getModuleId() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("id");
+/* ================= UI ================= */
+const grid       = document.getElementById("modulesGrid");
+const navPublic  = document.getElementById("nav-public");
+const navPrivate = document.getElementById("nav-private");
+const btnLogout  = document.getElementById("btnLogout");
+
+/* ================= AUTH ================= */
+onAuthStateChanged(auth, user => {
+  navPublic.classList.toggle("hidden", !!user);
+  navPrivate.classList.toggle("hidden", !user);
+});
+
+btnLogout.onclick = async () => {
+  await signOut(auth);
+  location.href = "login.html";
+};
+
+/* ================= NORMALISATION ================= */
+function normalize(txt = "") {
+  return txt
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, "et")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-/* ================= CHARGEMENT MODULE ================= */
-async function chargerModule() {
-  const id = getModuleId();
-  const panel = document.getElementById("modulePanel");
+/* ================= DURÉES OFFICIELLES DGPE ================= */
+const DUREES_DGPE = {
+  "gouvernance strategique et analyse financiere": "4 j",
+  "pilotage strategique": "4 j",
+  "audit et conformite": "3 j",
+  "performance et kpi": "2 j",
+  "transformation digitale": "3 j",
+  "ia et decision": "2 j",
+  "leadership": "2 j",
+  "communication de crise": "2 j",
+  "rse concevoir et piloter une strategie durable": "3 j",
+  "manager le changement durable": "2 j"
+};
 
-  if (!id) {
-    panel.innerHTML = "<p>❌ Module introuvable.</p>";
-    return;
-  }
+/* ================= CHARGER MODULES ================= */
+async function chargerModules() {
+  const recherche = searchInput.value.toLowerCase();
+  const domaine   = filterDomaine.value;
+
+  grid.innerHTML = "Chargement des modules…";
 
   try {
-    const ref = doc(db, "modules", id);
-    const snap = await getDoc(ref);
+    let q = collection(db, "modules");
+    if (domaine) q = query(q, where("domaine", "==", domaine));
 
-    if (!snap.exists()) {
-      panel.innerHTML = "<p>❌ Module inexistant.</p>";
-      return;
-    }
+    const snap = await getDocs(q);
+    let html = "";
 
-    const m = snap.data();
+    snap.forEach(docu => {
+      const m = docu.data();
+      if (!m.titre) return;
+      if (recherche && !m.titre.toLowerCase().includes(recherche)) return;
 
-    const dureeAffichee =
-      m.duree ? m.duree :
-      m.nbHeures ? m.nbHeures + " h" :
-      "—";
+      const key = normalize(m.titre);
+      const dureeAffichee = DUREES_DGPE[key] || "—";
 
-    panel.innerHTML = `
-      <h2>${m.titre}</h2>
+      html += `
+        <a href="module.html?id=${docu.id}" class="card">
+          <h3>${m.titre}</h3>
+          <p style="color:#a7b1bd">
+            ${m.domaine || "—"} • ${dureeAffichee}
+          </p>
+          <p>${m.resume || ""}</p>
+        </a>
+      `;
+    });
 
-      <p style="color:#a7b1bd; margin-bottom:1rem">
-        ${m.domaine || "—"} • ${dureeAffichee}
-      </p>
-
-      <p>${m.resume || ""}</p>
-
-      ${m.objectifs ? `
-        <h3>Objectifs</h3>
-        <p>${m.objectifs}</p>
-      ` : ""}
-
-      ${m.contenu ? `
-        <h3>Contenu</h3>
-        <p>${m.contenu}</p>
-      ` : ""}
-
-      <a href="catalogue.html" class="btn" style="margin-top:1.5rem">
-        ← Retour au catalogue
-      </a>
-    `;
+    grid.innerHTML = html || "<p>Aucun module trouvé.</p>";
 
   } catch (e) {
     console.error(e);
-    panel.innerHTML = "❌ Erreur lors du chargement du module.";
+    grid.innerHTML = "❌ Erreur lors du chargement.";
   }
 }
 
-chargerModule();
+btnSearch.onclick = chargerModules;
+chargerModules();
 </script>
 
 </body>

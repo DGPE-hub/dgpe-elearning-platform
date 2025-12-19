@@ -199,3 +199,56 @@ body.admin-page tbody tr:hover {
 @media (max-width: 960px) {
   .nav { display: none; }
 }
+/* ======================================================
+   LOGIN – VERSION FINALE DGPE
+====================================================== */
+
+.login-hero {
+  min-height: calc(100vh - 90px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    linear-gradient(rgba(11,53,91,.75), rgba(11,53,91,.75)),
+    url("assets/img/fond-jour.jpg") center/cover no-repeat;
+}
+
+.login-card {
+  width: 420px;
+  background: #ffffff;
+  color: #0b1a2b;
+  border-radius: 18px;
+  padding: 32px;
+  box-shadow: 0 25px 60px rgba(0,0,0,.35);
+}
+
+.login-card h2 {
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.login-sub {
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.login-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  margin: 10px 0 18px;
+}
+
+.login-row a {
+  color: var(--dgpe-accent);
+  text-decoration: none;
+}
+
+.login-msg {
+  margin-top: 14px;
+  font-size: 13px;
+  text-align: center;
+}

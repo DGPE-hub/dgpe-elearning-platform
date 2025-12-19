@@ -13,33 +13,26 @@
 <!-- ================= NAVBAR ================= -->
 <header class="navbar">
   <div class="wrap">
-
     <div class="logo-group">
-   <img src="assets/img/dgpe-logo.png" class="logo" alt="DGPE">
+      <img src="assets/img/dgpe-logo.png" class="logo" alt="DGPE">
       <span class="brand">e-Learning</span>
     </div>
 
+    <!-- MENU PUBLIC -->
     <nav class="nav" id="nav-public">
       <a href="index.html" class="active">Accueil</a>
       <a href="catalogue.html">Catalogue</a>
       <a href="login.html" class="pill">Connexion</a>
     </nav>
 
+    <!-- MENU PRIVÉ (caché par défaut) -->
     <nav class="nav hidden" id="nav-private">
-      <a href="index.html" class="active">Accueil</a>
-      <a href="catalogue.html">Catalogue</a>
       <a href="dashboard.html">Dashboard</a>
       <a href="administration.html">Administration</a>
-      <a href="#" class="pill" onclick="logout()">Déconnexion</a>
+      <a href="login.html" class="pill">Déconnexion</a>
     </nav>
-
-    <button class="burger" aria-label="Menu">
-      <span></span>
-    </button>
-
   </div>
 </header>
-
 <!-- ================= MENU MOBILE ================= -->
 <aside class="offcanvas" aria-hidden="true">
   <div class="close" aria-label="Fermer">✕</div>

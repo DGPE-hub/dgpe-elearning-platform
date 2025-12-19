@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Demandes d’inscription – DGPE</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="admin-page">
+
+<!-- NAVBAR -->
+<div class="navbar">
+  <div class="wrap">
+    <div class="logo-group">
+      <img src="assets/img/dgpe-logo.png" class="logo">
+      <span class="brand">e-Learning</span>
+    </div>
+
+    <nav class="nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="administration.html">Administration</a>
+      <a href="login.html" class="pill">Déconnexion</a>
+    </nav>
+  </div>
+</div>
+
+<!-- CONTENU -->
+<main class="page">
+  <div class="panel">
+    <h2>📥 Demandes d’inscription</h2>
+    <p>Utilisateurs en attente de validation</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Email</th>
+          <th>Service</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="pendingUsers"></tbody>
+    </table>
+  </div>
+</main>
+
+<script type="module" src="js/demandes.js"></script>
+</body>
+</html>

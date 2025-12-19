@@ -9,148 +9,126 @@
 
 <body class="login-page">
 
-<!-- ================= NAVBAR ================= -->
-<div class="navbar-login">
+<header class="navbar-login">
   <div class="wrap">
     <div class="logo-group">
       <img src="assets/img/dgpe-logo.png" class="logo" alt="DGPE">
       <span class="brand">e-Learning</span>
     </div>
   </div>
-</div>
+</header>
 
-<!-- ================= HERO ================= -->
 <section class="hero hero-login">
   <div class="inner">
     <h1>Connexion</h1>
-    <p>Accès réservé aux agents et partenaires DGPE</p>
+    <p>Accès réservé aux utilisateurs autorisés</p>
   </div>
 </section>
 
-<!-- ================= FORM ================= -->
-<div class="login-wrap">
-  <div class="login-card">
-
+<main class="login-wrap">
+  <section class="login-card">
     <h2>Accès à la plateforme</h2>
 
     <label>Email professionnel</label>
-    <input id="email" class="input" type="email"
-           placeholder="prenom.nom@dgpe.gouv.ci">
+    <input id="email" class="input" type="email" placeholder="prenom.nom@dgpe.gouv.ci">
 
     <label>Mot de passe</label>
-    <input id="password" class="input" type="password"
-           placeholder="••••••••">
+    <input id="password" class="input" type="password">
 
     <div class="row">
       <label><input type="checkbox"> Se souvenir de moi</label>
-      <a href="#" id="forgotLink">Mot de passe oublié ?</a>
+      <a href="#" id="forgot">Mot de passe oublié ?</a>
     </div>
 
-    <button class="btn btn-primary" onclick="login()">Connexion</button>
-    <button class="btn btn-secondary" onclick="register()">Créer un compte</button>
+    <button class="btn btn-primary" id="btnLogin">Connexion</button>
+    <button class="btn btn-secondary" id="btnRegister">Créer un compte</button>
 
-    <!-- MESSAGE ADMIN DGPE -->
+    <!-- Message DGPE -->
     <p id="msg" class="msg"></p>
-
-  </div>
-</div>
+  </section>
+</main>
 
 <footer class="footer">
 © 2025 DGPE – Direction Générale du Portefeuille de l’État
 </footer>
 
-<!-- ================= SUPABASE ================= -->
+<!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* ================= CONFIG SUPABASE DGPE ================= */
+/* ================= SUPABASE ================= */
 const SUPABASE_URL = "https://rwjyxmzdwdddjaeghpae.supabase.co";
 const SUPABASE_KEY = "sb_publishable_GbNaiadaYRtF0WhOjiPp2w_ww7jVANw";
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ================= UI ================= */
-const msg = document.getElementById("msg");
+const emailEl = document.getElementById("email");
+const passEl  = document.getElementById("password");
+const msgEl   = document.getElementById("msg");
+
 function showMsg(text, type="info") {
-  msg.textContent = text;
-  msg.className = "msg " + type;
+  msgEl.textContent = text;
+  msgEl.className = "msg " + type;
 }
 
-/* ================= CONNEXION ================= */
-async function login() {
-  const email = email.value?.trim().toLowerCase() || document.getElementById("email").value.trim().toLowerCase();
-  const password = document.getElementById("password").value.trim();
+/* ================= LOGIN ================= */
+document.getElementById("btnLogin").onclick = async () => {
+
+  const email = emailEl.value.trim().toLowerCase();
+  const password = passEl.value.trim();
 
   if (!email || !password) {
-    showMsg("❌ Veuillez remplir tous les champs.", "error");
+    showMsg("Veuillez remplir tous les champs.", "error");
     return;
   }
 
   if (!email.endsWith("@dgpe.gouv.ci")) {
-    showMsg("⛔ Email professionnel DGPE requis.", "error");
+    showMsg("Accès réservé aux emails professionnels DGPE.", "error");
     return;
   }
 
-  showMsg("⏳ Connexion en cours…");
+  showMsg("Connexion en cours…");
 
-  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    showMsg("❌ Identifiants incorrects.", "error");
+    showMsg("Identifiants incorrects ou compte non confirmé.", "error");
     return;
   }
 
-  // Vérification DGPE (table users)
-  const { data: profile } = await supabaseClient
+  // Vérification DGPE
+  const { data: profile, error: profErr } = await supabase
     .from("users")
-    .select("status, role")
+    .select("role, status")
     .eq("email", email)
     .single();
 
-  if (!profile) {
-    showMsg("⛔ Compte non enregistré par l’administration DGPE.", "error");
+  if (profErr || !profile) {
+    showMsg("Compte non reconnu par l’administration DGPE.", "error");
     return;
   }
 
   if (profile.status === "PENDING") {
-    showMsg("⏳ Compte en attente de validation par l’administrateur DGPE.", "warning");
+    showMsg("Votre compte est en attente de validation par l’administrateur DGPE.", "warning");
     return;
   }
 
   if (profile.status !== "ACTIF") {
-    showMsg("⛔ Compte désactivé. Contactez l’administration.", "error");
+    showMsg("Compte désactivé. Contactez l’administration.", "error");
     return;
   }
 
-  showMsg("✅ Connexion autorisée. Redirection…", "success");
-  setTimeout(() => location.href = "dashboard.html", 900);
-}
+  showMsg("Connexion autorisée. Redirection…", "success");
 
-/* ================= INSCRIPTION ================= */
-async function register() {
-  const email = document.getElementById("email").value.trim().toLowerCase();
-  const password = document.getElementById("password").value.trim();
+  setTimeout(() => {
+    window.location.href = "dashboard.html";
+  }, 800);
+};
 
-  if (!email || !password) {
-    showMsg("❌ Veuillez remplir tous les champs.", "error");
-    return;
-  }
-
-  if (!email.endsWith("@dgpe.gouv.ci")) {
-    showMsg("⛔ Inscription réservée aux emails DGPE.", "error");
-    return;
-  }
-
-  const { error } = await supabaseClient.auth.signUp({ email, password });
-
-  if (error) {
-    showMsg("❌ " + error.message, "error");
-  } else {
-    showMsg(
-      "✅ Compte créé. Il sera activé après validation par l’administrateur DGPE.",
-      "success"
-    );
-  }
-}
+/* ================= REGISTER ================= */
+document.getElementById("btnRegister").onclick = () => {
+  window.location.href = "register.html";
+};
 </script>
 
 </body>

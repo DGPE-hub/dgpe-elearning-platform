@@ -34,6 +34,7 @@
     <h2>Tableau de bord</h2>
 
     <div class="cards" id="kpis">
+
       <div class="card">
         <h3>Modules suivis</h3>
         <p><strong id="kpi-modules">0</strong></p>
@@ -48,6 +49,7 @@
         <h3>Certifications</h3>
         <p><strong id="kpi-certifs">0</strong></p>
       </div>
+
     </div>
   </section>
 
@@ -66,24 +68,30 @@ const SUPABASE_URL = "https://rwjyxmzdwdddjaeghpae.supabase.co";
 const SUPABASE_KEY = "sb_publishable_GbNaiadaYRtF0WhOjiPp2w_ww7jVANw";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+/* ================= ELEMENTS UI ================= */
+const adminLink = document.getElementById("adminLink");
+const kpiModules = document.getElementById("kpi-modules");
+const kpiHeures  = document.getElementById("kpi-heures");
+const kpiCertifs = document.getElementById("kpi-certifs");
+
 /* ================= AUTH GUARD ================= */
 async function protectDashboard() {
-  const { data: { session } } = await supabase.auth.getSession();
 
-  if (!session) {
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  if (error || !user) {
     window.location.replace("login.html");
     return;
   }
 
-  const email = session.user.email;
-
-  const { data: profile, error } = await supabase
+  // 🔹 Lecture profil DGPE
+  const { data: profile, error: profileError } = await supabase
     .from("users")
     .select("role, status")
-    .eq("email", email)
+    .eq("email", user.email)
     .single();
 
-  if (error || !profile || profile.status !== "ACTIF") {
+  if (profileError || !profile || profile.status !== "ACTIF") {
     await supabase.auth.signOut();
     window.location.replace("login.html");
     return;
@@ -91,21 +99,32 @@ async function protectDashboard() {
 
   // 🔒 Masquer admin si non admin
   if (profile.role !== "ADMIN") {
-    document.getElementById("adminLink").style.display = "none";
+    adminLink.style.display = "none";
   }
 
-  chargerDashboard();
+  // Charger les données
+  chargerDashboard(user.id);
 }
 
 /* ================= DASHBOARD DATA ================= */
-function chargerDashboard() {
-  document.getElementById("kpi-modules").innerText = 3;
-  document.getElementById("kpi-heures").innerText = "12 h";
-  document.getElementById("kpi-certifs").innerText = 1;
+async function chargerDashboard(userId) {
+
+  /*
+    ⚠️ Pour l’instant données statiques
+    👉 ensuite on branchera :
+    - table inscriptions
+    - table modules
+    - table certifications
+  */
+
+  kpiModules.innerText = 3;
+  kpiHeures.innerText  = "12 h";
+  kpiCertifs.innerText = 1;
 }
 
 /* ================= LOGOUT ================= */
-document.getElementById("logoutBtn").addEventListener("click", async () => {
+document.getElementById("logoutBtn").addEventListener("click", async (e) => {
+  e.preventDefault();
   await supabase.auth.signOut();
   window.location.replace("login.html");
 });

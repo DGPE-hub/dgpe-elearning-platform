@@ -9,7 +9,6 @@
 
 <body class="login-page">
 
-<!-- ================= HEADER LOGIN ================= -->
 <header class="navbar-login">
   <div class="wrap">
     <img src="assets/img/dgpe-logo.png" class="logo" alt="DGPE">
@@ -17,29 +16,21 @@
   </div>
 </header>
 
-<!-- ================= LOGIN CARD ================= -->
 <div class="login-wrap">
   <div class="login-card">
 
     <h2>Connexion</h2>
 
     <label>Email professionnel</label>
-    <input id="email" class="input"
-           type="email"
+    <input id="email" class="input" type="email"
            placeholder="prenom.nom@dgpe.gouv.ci">
 
     <label>Mot de passe</label>
-    <input id="password" class="input"
-           type="password"
+    <input id="password" class="input" type="password"
            placeholder="••••••••">
 
-    <button class="btn btn-primary" onclick="login()">
-      Se connecter
-    </button>
-
-    <button class="btn btn-secondary" onclick="register()">
-      Créer un compte
-    </button>
+    <button class="btn btn-primary" onclick="login()">Se connecter</button>
+    <button class="btn btn-secondary" onclick="register()">Créer un compte</button>
 
     <p class="muted" style="text-align:center;margin-top:10px">
       Accès soumis à validation de l’administrateur DGPE
@@ -54,115 +45,41 @@
   © 2025 DGPE – Direction Générale du Portefeuille de l’État
 </footer>
 
-<!-- ================= SUPABASE ================= -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ================= CONFIG ================= */
-const SUPABASE_URL = "https://rwjyxmzdwdddjaeghpae.supabase.co";
-const SUPABASE_KEY = "sb_publishable_GbNaiadaYRtF0WhOjiPp2w_ww7jVANw";
-
+/* ================= SUPABASE CONFIG ================= */
 const supabaseClient = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
+  "https://rwjyxmzdwdddjaeghpae.supabase.co",
+  "sb_publishable_GbNaiadaYRtF0WhOjiPp2w_ww7jVANw"
 );
 
 const msg = document.getElementById("msg");
+const show = (t, c="info") => {
+  msg.textContent = t;
+  msg.className = "msg " + c;
+};
 
-function show(text, type="info"){
-  msg.textContent = text;
-  msg.className = "msg " + type;
-}
-
-/* ================= CONNEXION ================= */
+/* ================= LOGIN ================= */
 async function login(){
-  const email = document.getElementById("email").value.trim().toLowerCase();
-  const password = document.getElementById("password").value.trim();
+  const email = emailInput().toLowerCase();
+  const password = passwordInput();
 
-  if(!email || !password){
-    show("Veuillez remplir tous les champs","error");
-    return;
-  }
+  if(!email || !password)
+    return show("Veuillez remplir tous les champs","error");
 
-  if(!email.endsWith("@dgpe.gouv.ci")){
-    show("Email professionnel DGPE requis","error");
-    return;
-  }
+  if(!email.endsWith("@dgpe.gouv.ci"))
+    return show("Email DGPE requis","error");
 
-  show("Connexion en cours…");
+  show("Connexion en cours...");
 
-  // 1️⃣ Auth Supabase
-  const { error } = await supabaseClient.auth.signInWithPassword({
-    email, password
-  });
+  // 1️⃣ Auth
+  const { data: authData, error } =
+    await supabaseClient.auth.signInWithPassword({ email, password });
 
-  if(error){
-    show("Identifiants incorrects","error");
-    return;
-  }
+  if(error)
+    return show("Identifiants incorrects","error");
 
-  // 2️⃣ Attendre la session (CRITIQUE)
-  const { data: sessionData } = await supabaseClient.auth.getSession();
-  const user = sessionData?.session?.user;
+  const authUser = authData.user;
 
-  if(!user){
-    await supabaseClient.auth.signOut();
-    show("Session invalide","error");
-    return;
-  }
-
-  // 3️⃣ Vérification DGPE (table users)
-  const { data: profile, error: e2 } = await supabaseClient
-    .from("users")
-    .select("status, role")
-    .eq("email", email)
-    .single();
-
-  if(e2 || !profile){
-    await supabaseClient.auth.signOut();
-    show("Compte non reconnu par l’administration DGPE","error");
-    return;
-  }
-
-  if(profile.status !== "ACTIF"){
-    await supabaseClient.auth.signOut();
-    show("Compte en attente de validation administrateur","warning");
-    return;
-  }
-
-  // 4️⃣ OK
-  show("Connexion autorisée. Redirection…","success");
-  setTimeout(() => {
-    window.location.href = "dashboard.html";
-  }, 600);
-}
-
-/* ================= INSCRIPTION ================= */
-async function register(){
-  const email = document.getElementById("email").value.trim().toLowerCase();
-  const password = document.getElementById("password").value.trim();
-
-  if(!email || !password){
-    show("Veuillez remplir tous les champs","error");
-    return;
-  }
-
-  if(!email.endsWith("@dgpe.gouv.ci")){
-    show("Inscription réservée aux emails DGPE","error");
-    return;
-  }
-
-  const { error } = await supabaseClient.auth.signUp({
-    email, password
-  });
-
-  if(error){
-    show("Erreur inscription : " + error.message,"error");
-    return;
-  }
-
-  show("Compte créé. Validation administrateur requise.","success");
-}
-</script>
-
-</body>
-</html>
+  // 2️⃣ PROFIL MÉTIER (PAR auth_id)
+  const { data: profile, error: e2

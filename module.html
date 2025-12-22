@@ -9,6 +9,7 @@
 
 <body>
 
+<!-- ================= NAVBAR ================= -->
 <header class="navbar">
   <div class="wrap">
     <div class="logo-group">
@@ -24,17 +25,21 @@
   </div>
 </header>
 
+<!-- ================= CONTENU ================= -->
 <main class="page">
   <section class="panel" id="modulePanel">
-    <p>Chargement du module…</p>
+    <p class="muted">Chargement du module…</p>
   </section>
 </main>
 
+<!-- ================= FOOTER ================= -->
 <footer class="footer">
   © 2025 DGPE – Direction Générale du Portefeuille de l’État
 </footer>
 
+<!-- ================= SCRIPT ================= -->
 <script type="module">
+/* ================= FIREBASE ================= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
@@ -48,89 +53,95 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 
+/* ================= OUTILS ================= */
+const panel = document.getElementById("modulePanel");
+
 function getModuleId() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("id");
+  const p = new URLSearchParams(window.location.search);
+  return p.get("id");
 }
 
 function normalize(txt = "") {
-  return String(txt)
+  return txt
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/&/g, " et ")
-    .replace(/[:]/g, " ")
+    .replace(/[&:]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
 /* ================= DURÉES OFFICIELLES DGPE ================= */
 const dureesDGPE = {
-  [normalize("Gouvernance stratégique et analyse financière")]: "4 j",
-  [normalize("Pilotage stratégique")]: "4 j",
-  [normalize("Audit & conformité")]: "3 j",
-  [normalize("Performance & KPI")]: "2 j",
-  [normalize("Transformation digitale")]: "3 j",
-  [normalize("IA & Décision")]: "2 j",
-  [normalize("Leadership")]: "2 j",
-  [normalize("Communication de crise")]: "2 j",
-  [normalize("RSE : Concevoir et piloter une stratégie durable")]: "3 j",
-  [normalize("Manager le changement durable")]: "2 j"
+  [normalize("Gouvernance stratégique et analyse financière")]: "4 jours",
+  [normalize("Pilotage stratégique")]: "4 jours",
+  [normalize("Audit et conformité")]: "3 jours",
+  [normalize("Performance et KPI")]: "2 jours",
+  [normalize("Transformation digitale")]: "3 jours",
+  [normalize("IA et décision")]: "2 jours",
+  [normalize("Leadership")]: "2 jours",
+  [normalize("Communication de crise")]: "2 jours",
+  [normalize("RSE concevoir et piloter une stratégie durable")]: "3 jours",
+  [normalize("Manager le changement durable")]: "2 jours"
 };
 
-function getTitre(m = {}) {
-  return m.titre || m.title || m.nom || m.name || "";
+function getTitre(m) {
+  return m.titre || m.title || m.nom || "Module DGPE";
 }
 
-function getDureeAffichee(m = {}) {
+function getDuree(m) {
   const titre = getTitre(m);
-  const official = dureesDGPE[normalize(titre)];
-  if (official) return official;
-
-  if (m.duree) return m.duree;
-  if (m.nbHeures) return `${m.nbHeures} h`;
-  if (m.heures) return `${m.heures} h`;
-  return "—";
+  return dureesDGPE[normalize(titre)]
+    || m.duree
+    || (m.nbHeures ? `${m.nbHeures} h` : "—");
 }
 
+/* ================= CHARGEMENT ================= */
 async function chargerModule() {
+
   const id = getModuleId();
-  const panel = document.getElementById("modulePanel");
 
   if (!id) {
-    panel.innerHTML = "<p>❌ Module introuvable.</p>";
+    panel.innerHTML = `<p class="error">❌ Aucun module sélectionné.</p>`;
     return;
   }
 
   try {
-    const snap = await getDoc(doc(db, "modules", id));
+    const ref  = doc(db, "modules", id);
+    const snap = await getDoc(ref);
 
     if (!snap.exists()) {
-      panel.innerHTML = "<p>❌ Module inexistant.</p>";
+      panel.innerHTML = `<p class="error">❌ Module inexistant.</p>`;
       return;
     }
 
     const m = snap.data();
-    const titre = getTitre(m);
-    const dureeAffichee = getDureeAffichee(m);
 
     panel.innerHTML = `
-      <h2>${titre}</h2>
+      <h2>${getTitre(m)}</h2>
 
-      <p style="color:#a7b1bd; margin-bottom:1rem">
-        ${m.domaine || "—"} • ${dureeAffichee}
+      <p class="meta">
+        ${m.domaine || "—"} • ${getDuree(m)}
       </p>
 
-      <p>${m.resume || ""}</p>
+      ${m.resume ? `<p>${m.resume}</p>` : ""}
 
-      ${m.objectifs ? `<h3>Objectifs</h3><p>${m.objectifs}</p>` : ""}
-      ${m.contenu ? `<h3>Contenu</h3><p>${m.contenu}</p>` : ""}
+      ${m.objectifs ? `
+        <h3>Objectifs pédagogiques</h3>
+        <p>${m.objectifs}</p>
+      ` : ""}
 
-      <a href="catalogue.html" class="btn" style="margin-top:1.5rem">← Retour au catalogue</a>
+      ${m.contenu ? `
+        <h3>Contenu du module</h3>
+        <p>${m.contenu}</p>
+      ` : ""}
+
+      <a href="catalogue.html" class="btn">← Retour au catalogue</a>
     `;
-  } catch (e) {
-    console.error(e);
-    panel.innerHTML = "❌ Erreur lors du chargement du module.";
+
+  } catch (err) {
+    console.error(err);
+    panel.innerHTML = `<p class="error">❌ Erreur technique lors du chargement.</p>`;
   }
 }
 

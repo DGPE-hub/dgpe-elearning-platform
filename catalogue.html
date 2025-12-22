@@ -16,17 +16,21 @@
       <span class="brand">e-Learning</span>
     </div>
 
+    <!-- MENU PUBLIC -->
     <nav class="nav" id="nav-public">
       <a href="index.html">Accueil</a>
       <a href="catalogue.html" class="active">Catalogue</a>
+      <a href="modules.html">Modules</a>
       <a href="login.html" class="pill">Connexion</a>
     </nav>
 
+    <!-- MENU PRIVÉ -->
     <nav class="nav hidden" id="nav-private">
       <a href="index.html">Accueil</a>
       <a href="catalogue.html" class="active">Catalogue</a>
+      <a href="modules.html">Modules</a>
       <a href="dashboard.html">Dashboard</a>
-      <a href="administration.html">Administration</a>
+      <a href="administration.html" id="adminLink">Administration</a>
       <a href="#" class="pill" id="btnLogout">Déconnexion</a>
     </nav>
   </div>
@@ -62,41 +66,23 @@
 </footer>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-/* ================= CONFIG ================= */
-const firebaseConfig = {
-  apiKey: "AIzaSyDLeMFoRoclFnfubLqhJBvwtySxLttyHqs",
-  authDomain: "dgpe-elearning.firebaseapp.com",
-  projectId: "dgpe-elearning"
-};
-
-const app  = initializeApp(firebaseConfig);
-const db   = getFirestore(app);
-const auth = getAuth(app);
+/* ================= SUPABASE CONFIG ================= */
+const SUPABASE_URL = "https://rwjyxmzdwdddjaeghpae.supabase.co";
+const SUPABASE_KEY = "sb_publishable_GbNaiadaYRtF0WhOjiPp2w_ww7jVANw";
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ================= UI ================= */
-const grid         = document.getElementById("modulesGrid");
-const navPublic    = document.getElementById("nav-public");
-const navPrivate   = document.getElementById("nav-private");
-const btnLogout    = document.getElementById("btnLogout");
-const searchInput  = document.getElementById("searchInput");
-const filterDomaine= document.getElementById("filterDomaine");
-const btnSearch    = document.getElementById("btnSearch");
+const grid          = document.getElementById("modulesGrid");
+const navPublic     = document.getElementById("nav-public");
+const navPrivate    = document.getElementById("nav-private");
+const btnLogout     = document.getElementById("btnLogout");
+const adminLink     = document.getElementById("adminLink");
 
-/* ================= AUTH ================= */
-onAuthStateChanged(auth, user => {
-  navPublic.classList.toggle("hidden", !!user);
-  navPrivate.classList.toggle("hidden", !user);
-});
-
-btnLogout?.addEventListener("click", async (e) => {
-  e.preventDefault();
-  await signOut(auth);
-  location.href = "login.html";
-});
+const searchInput   = document.getElementById("searchInput");
+const filterDomaine = document.getElementById("filterDomaine");
+const btnSearch     = document.getElementById("btnSearch");
 
 /* ================= NORMALIZE ================= */
 function normalize(txt = "") {
@@ -139,13 +125,54 @@ function getDureeAffichee(m = {}) {
   return "—";
 }
 
+/* ================= AUTH NAV (public/privé + admin) ================= */
+async function setupNav() {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  navPublic.classList.toggle("hidden", !!user);
+  navPrivate.classList.toggle("hidden", !user);
+
+  if (!user) return;
+
+  // Si tu as une table "users" (comme dans ton dashboard), on garde la même logique:
+  const { data: profile } = await supabase
+    .from("users")
+    .select("role, status")
+    .eq("email", user.email)
+    .single();
+
+  // Si pas admin -> cacher Administration
+  if (!profile || profile.role !== "ADMIN") {
+    if (adminLink) adminLink.style.display = "none";
+  }
+}
+
+/* ================= LOGOUT ================= */
+btnLogout?.addEventListener("click", async (e) => {
+  e.preventDefault();
+  await supabase.auth.signOut();
+  location.href = "login.html";
+});
+
 /* ================= DATA ================= */
-let ALL = []; // cache local
+let ALL = [];
 
 async function loadAllModules() {
   grid.innerHTML = "Chargement des modules…";
-  const snap = await getDocs(collection(db, "modules"));
-  ALL = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  // Récupérer les modules actifs (actif = true ou null)
+  const { data, error } = await supabase
+    .from("modules")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    grid.innerHTML = "❌ Erreur lors du chargement.";
+    return;
+  }
+
+  ALL = (data || []).filter(m => m.actif !== false);
 }
 
 /* ================= RENDER ================= */
@@ -154,14 +181,10 @@ function render() {
   const domaine = (filterDomaine.value || "").trim();
 
   const filtered = ALL.filter(m => {
-    // "actif" : si absent → on considère actif
-    if (m.actif === false) return false;
-
     const titre = getTitre(m);
     if (!titre) return false;
 
     if (domaine && (m.domaine || "").trim() !== domaine) return false;
-
     if (recherche && !normalize(titre).includes(recherche)) return false;
 
     return true;
@@ -190,14 +213,11 @@ function render() {
 btnSearch.addEventListener("click", render);
 searchInput.addEventListener("keydown", (e) => { if (e.key === "Enter") render(); });
 
+/* ================= INIT ================= */
 (async () => {
-  try {
-    await loadAllModules();
-    render();
-  } catch (e) {
-    console.error(e);
-    grid.innerHTML = "❌ Erreur lors du chargement.";
-  }
+  await setupNav();
+  await loadAllModules();
+  render();
 })();
 </script>
 

@@ -7,44 +7,45 @@
 </head>
 <body>
 
+<!-- NAVBAR -->
 <header class="navbar">
   <div class="wrap">
     <div class="logo-group">
       <img src="assets/img/dgpe-logo.png" class="logo">
       <span class="brand">e-Learning</span>
     </div>
-    <nav class="nav">
+    <nav class="nav hidden" id="nav-private">
       <a href="index.html">Accueil</a>
       <a href="catalogue.html">Catalogue</a>
       <a href="modules.html">Modules</a>
-      <a href="dashboard.html" class="active">Dashboard</a>
+      <a href="dashboard.html">Dashboard</a>
       <a href="#" id="logoutBtn" class="pill">Déconnexion</a>
     </nav>
   </div>
 </header>
 
 <main class="page">
-  <section class="panel">
-    <h2>Tableau de bord</h2>
-    <div class="cards">
-      <div class="card"><h3>Modules suivis</h3><p>3</p></div>
-      <div class="card"><h3>Heures</h3><p>12 h</p></div>
-      <div class="card"><h3>Certifications</h3><p>1</p></div>
-    </div>
-  </section>
+  <h1>Dashboard utilisateur</h1>
 </main>
 
-<footer class="footer">© 2025 DGPE</footer>
+<!-- PROTECTION -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const supabaseClient = supabase.createClient(
+  "https://hrriedjmpwjfmfimqlmx.supabase.co",
+  "sb_publishable_1AnZMUSy3A4X8xIrKJOKQw_cOX40j9V"
+);
 
-<script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-const supabase = createClient("https://rwjyxmzdwdddjaeghpae.supabase.co",
-"sb_publishable_GbNaiadaYRtF0WhOjiPp2w_ww7jVANw");
+(async () => {
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (!user) window.location.replace("login.html");
 
-document.getElementById("logoutBtn").onclick = async () => {
-  await supabase.auth.signOut();
-  location.href = "login.html";
-};
+  document.getElementById("nav-private").classList.remove("hidden");
+  document.getElementById("logoutBtn").onclick = async () => {
+    await supabaseClient.auth.signOut();
+    window.location.replace("login.html");
+  };
+})();
 </script>
 
 </body>

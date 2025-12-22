@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Connexion – DGPE</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="login-page">
+
+<header class="navbar-login">
+  <div class="wrap">
+    <img src="assets/img/dgpe-logo.png" class="logo" alt="DGPE">
+    <span class="brand">e-Learning</span>
+  </div>
+</header>
+
+<div class="login-wrap">
+  <div class="login-card">
+    <h2>Connexion</h2>
+
+    <label>Email professionnel</label>
+    <input id="email" class="input" type="email">
+
+    <label>Mot de passe</label>
+    <input id="password" class="input" type="password">
+
+    <button id="btnLogin" class="btn btn-primary">Se connecter</button>
+    <button id="btnRegister" class="btn btn-secondary">Créer un compte</button>
+
+    <p id="msg" class="msg"></p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const supabaseClient = supabase.createClient(
+  "https://rwjyxmzdwdddjaeghpae.supabase.co",
+  "sb_publishable_GbNaiadaYRtF0WhOjiPp2w_ww7jVANw"
+);
+
+const email = document.getElementById("email");
+const password = document.getElementById("password");
+const msg = document.getElementById("msg");
+
+document.getElementById("btnLogin").addEventListener("click", async () => {
+  const { error } = await supabaseClient.auth.signInWithPassword({
+    email: email.value,
+    password: password.value
+  });
+
+  if (error) msg.textContent = error.message;
+  else msg.textContent = "Connecté ✔";
+});
+
+document.getElementById("btnRegister").addEventListener("click", async () => {
+  const { error } = await supabaseClient.auth.signUp({
+    email: email.value,
+    password: password.value
+  });
+
+  if (error) msg.textContent = error.message;
+  else msg.textContent = "Compte créé ✔";
+});
+</script>
+
+</body>
+</html>

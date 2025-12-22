@@ -2,222 +2,49 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Catalogue – DGPE</title>
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
+<!-- NAVBAR (IDENTIQUE) -->
 <header class="navbar">
   <div class="wrap">
     <div class="logo-group">
-      <img src="assets/img/dgpe-logo.png" class="logo" alt="DGPE">
+      <img src="assets/img/dgpe-logo.png" class="logo">
       <span class="brand">e-Learning</span>
     </div>
-
-    <!-- MENU PUBLIC -->
-    <nav class="nav" id="nav-public">
-      <a href="index.html">Accueil</a>
-      <a href="catalogue.html" class="active">Catalogue</a>
-      <a href="modules.html">Modules</a>
-      <a href="login.html" class="pill">Connexion</a>
-    </nav>
-
-    <!-- MENU PRIVÉ -->
     <nav class="nav hidden" id="nav-private">
       <a href="index.html">Accueil</a>
-      <a href="catalogue.html" class="active">Catalogue</a>
+      <a href="catalogue.html">Catalogue</a>
       <a href="modules.html">Modules</a>
       <a href="dashboard.html">Dashboard</a>
-      <a href="administration.html" id="adminLink">Administration</a>
-      <a href="#" class="pill" id="btnLogout">Déconnexion</a>
+      <a href="#" id="logoutBtn" class="pill">Déconnexion</a>
     </nav>
   </div>
 </header>
 
 <main class="page">
-  <section class="panel">
-    <h2>Catalogue des formations</h2>
-
-    <input id="searchInput" class="input" placeholder="Rechercher un module…">
-
-    <select id="filterDomaine" class="input">
-      <option value="">Tous domaines</option>
-      <option>Gouvernance</option>
-      <option>Management</option>
-      <option>Finance Publique</option>
-      <option>Performance</option>
-      <option>Digital</option>
-      <option>Leadership</option>
-    </select>
-
-    <button class="btn" id="btnSearch">Rechercher</button>
-  </section>
-
-  <section class="panel">
-    <h3>Résultats</h3>
-    <div class="modules-grid" id="modulesGrid"></div>
-  </section>
+  <h1>Catalogue des formations</h1>
 </main>
 
-<footer class="footer">
-  © 2025 DGPE – Direction Générale du Portefeuille de l’État
-</footer>
+<!-- PROTECTION -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const supabaseClient = supabase.createClient(
+  "https://hrriedjmpwjfmfimqlmx.supabase.co",
+  "sb_publishable_1AnZMUSy3A4X8xIrKJOKQw_cOX40j9V"
+);
 
-<script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-/* ================= SUPABASE CONFIG ================= */
-const SUPABASE_URL = "https://rwjyxmzdwdddjaeghpae.supabase.co";
-const SUPABASE_KEY = "sb_publishable_GbNaiadaYRtF0WhOjiPp2w_ww7jVANw";
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-/* ================= UI ================= */
-const grid          = document.getElementById("modulesGrid");
-const navPublic     = document.getElementById("nav-public");
-const navPrivate    = document.getElementById("nav-private");
-const btnLogout     = document.getElementById("btnLogout");
-const adminLink     = document.getElementById("adminLink");
-
-const searchInput   = document.getElementById("searchInput");
-const filterDomaine = document.getElementById("filterDomaine");
-const btnSearch     = document.getElementById("btnSearch");
-
-/* ================= NORMALIZE ================= */
-function normalize(txt = "") {
-  return String(txt)
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/&/g, " et ")
-    .replace(/[:]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/* ================= DURÉES OFFICIELLES DGPE ================= */
-const dureesDGPE = {
-  [normalize("Gouvernance stratégique et analyse financière")]: "4 j",
-  [normalize("Pilotage stratégique")]: "4 j",
-  [normalize("Audit & conformité")]: "3 j",
-  [normalize("Performance & KPI")]: "2 j",
-  [normalize("Transformation digitale")]: "3 j",
-  [normalize("IA & Décision")]: "2 j",
-  [normalize("Leadership")]: "2 j",
-  [normalize("Communication de crise")]: "2 j",
-  [normalize("RSE : Concevoir et piloter une stratégie durable")]: "3 j",
-  [normalize("Manager le changement durable")]: "2 j"
-};
-
-function getTitre(m = {}) {
-  return m.titre || m.title || m.nom || m.name || "";
-}
-
-function getDureeAffichee(m = {}) {
-  const titre = getTitre(m);
-  const official = dureesDGPE[normalize(titre)];
-  if (official) return official;
-
-  if (m.duree) return m.duree;
-  if (m.nbHeures) return `${m.nbHeures} h`;
-  if (m.heures) return `${m.heures} h`;
-  return "—";
-}
-
-/* ================= AUTH NAV (public/privé + admin) ================= */
-async function setupNav() {
-  const { data: { user } } = await supabase.auth.getUser();
-
-  navPublic.classList.toggle("hidden", !!user);
-  navPrivate.classList.toggle("hidden", !user);
-
-  if (!user) return;
-
-  // Si tu as une table "users" (comme dans ton dashboard), on garde la même logique:
-  const { data: profile } = await supabase
-    .from("users")
-    .select("role, status")
-    .eq("email", user.email)
-    .single();
-
-  // Si pas admin -> cacher Administration
-  if (!profile || profile.role !== "ADMIN") {
-    if (adminLink) adminLink.style.display = "none";
-  }
-}
-
-/* ================= LOGOUT ================= */
-btnLogout?.addEventListener("click", async (e) => {
-  e.preventDefault();
-  await supabase.auth.signOut();
-  location.href = "login.html";
-});
-
-/* ================= DATA ================= */
-let ALL = [];
-
-async function loadAllModules() {
-  grid.innerHTML = "Chargement des modules…";
-
-  // Récupérer les modules actifs (actif = true ou null)
-  const { data, error } = await supabase
-    .from("modules")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error(error);
-    grid.innerHTML = "❌ Erreur lors du chargement.";
-    return;
-  }
-
-  ALL = (data || []).filter(m => m.actif !== false);
-}
-
-/* ================= RENDER ================= */
-function render() {
-  const recherche = normalize(searchInput.value);
-  const domaine = (filterDomaine.value || "").trim();
-
-  const filtered = ALL.filter(m => {
-    const titre = getTitre(m);
-    if (!titre) return false;
-
-    if (domaine && (m.domaine || "").trim() !== domaine) return false;
-    if (recherche && !normalize(titre).includes(recherche)) return false;
-
-    return true;
-  });
-
-  if (!filtered.length) {
-    grid.innerHTML = "<p>Aucun module trouvé.</p>";
-    return;
-  }
-
-  grid.innerHTML = filtered.map(m => {
-    const titre = getTitre(m);
-    const dureeAffichee = getDureeAffichee(m);
-
-    return `
-      <a href="module.html?id=${m.id}" class="card">
-        <h3>${titre}</h3>
-        <p style="color:#a7b1bd">${m.domaine || "—"} • ${dureeAffichee}</p>
-        <p>${m.resume || ""}</p>
-      </a>
-    `;
-  }).join("");
-}
-
-/* ================= EVENTS ================= */
-btnSearch.addEventListener("click", render);
-searchInput.addEventListener("keydown", (e) => { if (e.key === "Enter") render(); });
-
-/* ================= INIT ================= */
 (async () => {
-  await setupNav();
-  await loadAllModules();
-  render();
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  if (!user) window.location.replace("login.html");
+
+  document.getElementById("nav-private").classList.remove("hidden");
+  document.getElementById("logoutBtn").onclick = async () => {
+    await supabaseClient.auth.signOut();
+    window.location.replace("login.html");
+  };
 })();
 </script>
 

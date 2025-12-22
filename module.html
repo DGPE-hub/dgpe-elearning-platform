@@ -2,150 +2,51 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Module – DGPE</title>
+  <title>Mes modules – DGPE</title>
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<!-- ================= NAVBAR ================= -->
 <header class="navbar">
   <div class="wrap">
     <div class="logo-group">
-      <img src="assets/img/dgpe-logo.png" class="logo" alt="DGPE">
+      <img src="assets/img/dgpe-logo.png" class="logo">
       <span class="brand">e-Learning</span>
     </div>
-
     <nav class="nav">
       <a href="index.html">Accueil</a>
       <a href="catalogue.html">Catalogue</a>
+      <a href="modules.html" class="active">Modules</a>
       <a href="dashboard.html">Dashboard</a>
     </nav>
   </div>
 </header>
 
-<!-- ================= CONTENU ================= -->
 <main class="page">
-  <section class="panel" id="modulePanel">
-    <p class="muted">Chargement du module…</p>
+  <section class="panel">
+    <h2>Mes modules</h2>
+    <div id="myModules" class="modules-grid"></div>
   </section>
 </main>
 
-<!-- ================= FOOTER ================= -->
-<footer class="footer">
-  © 2025 DGPE – Direction Générale du Portefeuille de l’État
-</footer>
+<footer class="footer">© 2025 DGPE</footer>
 
-<!-- ================= SCRIPT ================= -->
 <script type="module">
-/* ================= FIREBASE ================= */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const supabase = createClient("https://rwjyxmzdwdddjaeghpae.supabase.co",
+"sb_publishable_GbNaiadaYRtF0WhOjiPp2w_ww7jVANw");
 
-/* ================= CONFIG ================= */
-const firebaseConfig = {
-  apiKey: "AIzaSyDLeMFoRoclFnfubLqhJBvwtySxLttyHqs",
-  authDomain: "dgpe-elearning.firebaseapp.com",
-  projectId: "dgpe-elearning"
-};
+const { data:{ user }} = await supabase.auth.getUser();
+const { data } = await supabase
+  .from("inscriptions")
+  .select("modules(*)")
+  .eq("user_id", user.id);
 
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
-
-/* ================= OUTILS ================= */
-const panel = document.getElementById("modulePanel");
-
-function getModuleId() {
-  const p = new URLSearchParams(window.location.search);
-  return p.get("id");
-}
-
-function normalize(txt = "") {
-  return txt
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[&:]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/* ================= DURÉES OFFICIELLES DGPE ================= */
-const dureesDGPE = {
-  [normalize("Gouvernance stratégique et analyse financière")]: "4 jours",
-  [normalize("Pilotage stratégique")]: "4 jours",
-  [normalize("Audit et conformité")]: "3 jours",
-  [normalize("Performance et KPI")]: "2 jours",
-  [normalize("Transformation digitale")]: "3 jours",
-  [normalize("IA et décision")]: "2 jours",
-  [normalize("Leadership")]: "2 jours",
-  [normalize("Communication de crise")]: "2 jours",
-  [normalize("RSE concevoir et piloter une stratégie durable")]: "3 jours",
-  [normalize("Manager le changement durable")]: "2 jours"
-};
-
-function getTitre(m) {
-  return m.titre || m.title || m.nom || "Module DGPE";
-}
-
-function getDuree(m) {
-  const titre = getTitre(m);
-  return dureesDGPE[normalize(titre)]
-    || m.duree
-    || (m.nbHeures ? `${m.nbHeures} h` : "—");
-}
-
-/* ================= CHARGEMENT ================= */
-async function chargerModule() {
-
-  const id = getModuleId();
-
-  if (!id) {
-    panel.innerHTML = `<p class="error">❌ Aucun module sélectionné.</p>`;
-    return;
-  }
-
-  try {
-    const ref  = doc(db, "modules", id);
-    const snap = await getDoc(ref);
-
-    if (!snap.exists()) {
-      panel.innerHTML = `<p class="error">❌ Module inexistant.</p>`;
-      return;
-    }
-
-    const m = snap.data();
-
-    panel.innerHTML = `
-      <h2>${getTitre(m)}</h2>
-
-      <p class="meta">
-        ${m.domaine || "—"} • ${getDuree(m)}
-      </p>
-
-      ${m.resume ? `<p>${m.resume}</p>` : ""}
-
-      ${m.objectifs ? `
-        <h3>Objectifs pédagogiques</h3>
-        <p>${m.objectifs}</p>
-      ` : ""}
-
-      ${m.contenu ? `
-        <h3>Contenu du module</h3>
-        <p>${m.contenu}</p>
-      ` : ""}
-
-      <a href="catalogue.html" class="btn">← Retour au catalogue</a>
-    `;
-
-  } catch (err) {
-    console.error(err);
-    panel.innerHTML = `<p class="error">❌ Erreur technique lors du chargement.</p>`;
-  }
-}
-
-chargerModule();
+document.getElementById("myModules").innerHTML =
+  data.map(i => `
+    <a href="module.html?id=${i.modules.id}" class="card">
+      <h3>${i.modules.titre}</h3>
+    </a>`).join("");
 </script>
 
 </body>

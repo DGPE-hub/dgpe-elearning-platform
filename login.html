@@ -4,73 +4,164 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Connexion – DGPE</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="./style.css">
 </head>
 
 <body class="login-page">
 
-<header class="navbar-login">
+<!-- ================= NAVBAR ================= -->
+<div class="navbar-login">
   <div class="wrap">
-    <img src="assets/img/dgpe-logo.png" class="logo" alt="DGPE">
-    <span class="brand">e-Learning</span>
-  </div>
-</header>
-
-<div class="login-wrap">
-  <div class="login-card">
-    <h2>Connexion</h2>
-
-    <label>Email professionnel</label>
-    <input id="email" class="input" type="email">
-
-    <label>Mot de passe</label>
-    <input id="password" class="input" type="password">
-
-    <!-- 🔥 TYPE=BUTTON OBLIGATOIRE -->
-    <button id="btnLogin" type="button" class="btn btn-primary">
-      Se connecter
-    </button>
-
-    <p id="msg" class="msg"></p>
+    <div class="logo-group">
+      <div class="logo-wrapper">
+        <img src="assets/img/dgpe-logo.png" class="logo" alt="DGPE">
+      </div>
+      <span class="brand">e-Learning</span> 
+    </div>
   </div>
 </div>
 
+<!-- ================= HERO ================= -->
+<section class="hero" style="background:none;min-height:auto;padding-top:60px;text-align:center">
+  <div class="inner">
+    <h1>Connexion</h1>
+    <p>Accédez à vos cours et à votre tableau de bord</p>
+  </div>
+</section>
+
+<!-- ================= LOGIN CARD ================= -->
+<div class="login-wrap">
+  <div class="login-card">
+    <h2>Se connecter</h2>
+
+    <label>Email professionnel</label>
+    <input id="email" class="input" type="email" placeholder="prenom.nom@email.com">
+
+    <label>Mot de passe</label>
+    <input id="password" class="input" type="password" placeholder="••••••••">
+
+    <div class="row">
+      <label><input type="checkbox"> Se souvenir de moi</label>
+      <a href="#">Mot de passe oublié ?</a>
+    </div>
+
+    <button id="btnLogin" class="btn btn-primary">Connexion</button>
+
+    <br><br>
+
+    <button id="btnRegister" class="btn btn-secondary">Créer un compte</button>
+
+    <p id="msg" style="margin-top:15px;font-weight:500"></p>
+  </div>
+</div>
+
+<footer class="footer">
+© 2025 DGPE – Direction Générale du Portefeuille de l’État
+</footer>
+
+<!-- ================= SUPABASE SDK ================= -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-console.log("🚀 Login script chargé");
+/* ================= CONFIG SUPABASE ================= */
+const SUPABASE_URL = "https://hrriedjmpwjfmfimqlmx.supabase.co";
+
+/* ⚠️ METS ICI LA *ANON PUBLIC KEY* (PAS service_role) */
+const SUPABASE_KEY = "REMPLACE_ICI_PAR_LA_ANON_PUBLIC_KEY";
 
 const supabaseClient = supabase.createClient(
-  "https://rwjyxmzdwdddjaeghpae.supabase.co",
-  "sb_publishable_GbNaiadaYRtF0WhOjiPp2w_ww7jVANw"
+  SUPABASE_URL,
+  SUPABASE_KEY
 );
 
-const email = document.getElementById("email");
-const password = document.getElementById("password");
+/* ================= UI ================= */
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
 const msg = document.getElementById("msg");
-const btnLogin = document.getElementById("btnLogin");
 
-btnLogin.addEventListener("click", async () => {
-  console.log("🟢 Bouton cliqué");
+function showMsg(text, type = "info") {
+  msg.textContent = text;
+  msg.style.color =
+    type === "error" ? "#c62828" :
+    type === "warning" ? "#ef6c00" :
+    type === "success" ? "#2e7d32" :
+    "#333";
+}
 
-  msg.textContent = "Connexion en cours...";
+/* ================= CONNEXION ================= */
+document.getElementById("btnLogin").addEventListener("click", async () => {
+  const email = emailInput.value.trim().toLowerCase();
+  const password = passwordInput.value.trim();
 
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email: email.value.trim(),
-    password: password.value
-  });
-
-  if (error) {
-    console.error(error);
-    msg.textContent = "❌ " + error.message;
+  if (!email || !password) {
+    showMsg("❌ Veuillez remplir tous les champs.", "error");
     return;
   }
 
-  msg.textContent = "✅ Connecté";
-  console.log("Utilisateur :", data.user);
+  showMsg("⏳ Connexion en cours…");
 
-  // 🔐 REDIRECTION
-  window.location.href = "dashboard.html";
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    showMsg("❌ Email ou mot de passe incorrect.", "error");
+    return;
+  }
+
+  // 🔎 Vérification DGPE (table users)
+  const { data: profile, error: profileError } = await supabaseClient
+    .from("users")
+    .select("status, role")
+    .eq("email", email)
+    .single();
+
+  if (profileError || !profile) {
+    showMsg("⛔ Compte non autorisé par la DGPE.", "error");
+    return;
+  }
+
+  if (profile.status === "PENDING") {
+    showMsg("⏳ Compte en attente de validation DGPE.", "warning");
+    return;
+  }
+
+  if (profile.status !== "ACTIF") {
+    showMsg("⛔ Compte désactivé. Contactez l’administration.", "error");
+    return;
+  }
+
+  showMsg("✅ Connexion réussie. Redirection…", "success");
+
+  setTimeout(() => {
+    window.location.href = "dashboard.html";
+  }, 700);
+});
+
+/* ================= INSCRIPTION ================= */
+document.getElementById("btnRegister").addEventListener("click", async () => {
+  const email = emailInput.value.trim().toLowerCase();
+  const password = passwordInput.value.trim();
+
+  if (!email || !password) {
+    showMsg("❌ Veuillez remplir tous les champs.", "error");
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.signUp({
+    email,
+    password
+  });
+
+  if (error) {
+    showMsg("❌ Erreur inscription : " + error.message, "error");
+  } else {
+    showMsg(
+      "✅ Compte créé. En attente de validation par l’administrateur DGPE.",
+      "success"
+    );
+  }
 });
 </script>
 

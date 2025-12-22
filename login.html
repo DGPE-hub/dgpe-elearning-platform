@@ -13,7 +13,7 @@
   <div class="wrap">
     <div class="logo-group">
       <div class="logo-wrapper">
-        <img src="./assets/img/DGPE_logo.png" class="logo" alt="DGPE">
+        <img src="assets/img/dgpe-logo.png" class="logo" alt="DGPE">
       </div>
       <span class="brand">e-Learning</span> 
     </div>
@@ -59,63 +59,121 @@
 
 <script>
 /* ===============================
-   ✅ CONFIG SUPABASE
+   CONFIG SUPABASE
 ================================ */
 const SUPABASE_URL = "https://hrriedjmpwjfmfimqlmx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1AnZMUSy3A4X8xIrKJOKQw_cOX40j9V";
-
-// ✅ NE PAS UTILISER "const supabase = supabase..."
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ===============================
-   ✅ CONNEXION
+   UI
 ================================ */
-async function login() {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
+const msgBox = document.createElement("p");
+msgBox.style.marginTop = "15px";
+msgBox.style.fontWeight = "500";
+document.querySelector(".login-card").appendChild(msgBox);
 
-  if (!email || !password) {
-    alert("❌ Veuillez remplir tous les champs.");
-    return;
-  }
-
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    alert("❌ Connexion refusée : " + error.message);
-  } else {
-    alert("✅ Connexion réussie !");
-    window.location.href = "dashboard.html";
-  }
+function showMsg(text, type = "info") {
+  msgBox.textContent = text;
+  msgBox.style.color =
+    type === "error" ? "#c62828" :
+    type === "warning" ? "#ef6c00" :
+    type === "success" ? "#2e7d32" :
+    "#333";
 }
 
 /* ===============================
-   ✅ INSCRIPTION
+   CONNEXION DGPE
 ================================ */
-async function register() {
-  const email = document.getElementById("email").value.trim();
+async function login() {
+  const email = document.getElementById("email").value.trim().toLowerCase();
   const password = document.getElementById("password").value.trim();
 
   if (!email || !password) {
-    alert("❌ Veuillez remplir tous les champs.");
+    showMsg("❌ Veuillez remplir tous les champs.", "error");
     return;
   }
 
-  const { data, error } = await supabaseClient.auth.signUp({
+  // 🔒 Blocage emails non pro
+  if (!email.endsWith("@dgpe.gouv.ci")) {
+    showMsg("⛔ Utilisez votre email professionnel DGPE.", "error");
+    return;
+  }
+
+  showMsg("⏳ Connexion en cours…");
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
     email,
-    password,
+    password
   });
 
   if (error) {
-    alert("❌ Erreur inscription : " + error.message);
+    showMsg("❌ Identifiants incorrects ou compte non confirmé.", "error");
+    return;
+  }
+
+  // 🔎 Vérification DGPE (table users)
+  const { data: profile, error: profileError } = await supabaseClient
+    .from("users")
+    .select("status, role")
+    .eq("email", email)
+    .single();
+
+  if (profileError || !profile) {
+    showMsg("⛔ Compte non reconnu par l’administration DGPE.", "error");
+    return;
+  }
+
+  if (profile.status === "PENDING") {
+    showMsg("⏳ Votre compte est en attente de validation par l’administrateur DGPE.", "warning");
+    return;
+  }
+
+  if (profile.status !== "ACTIF") {
+    showMsg("⛔ Compte désactivé. Contactez l’administration DGPE.", "error");
+    return;
+  }
+
+  showMsg("✅ Connexion autorisée. Redirection…", "success");
+
+  setTimeout(() => {
+    window.location.href = "dashboard.html";
+  }, 800);
+}
+
+/* ===============================
+   INSCRIPTION DGPE
+================================ */
+async function register() {
+  const email = document.getElementById("email").value.trim().toLowerCase();
+  const password = document.getElementById("password").value.trim();
+
+  if (!email || !password) {
+    showMsg("❌ Veuillez remplir tous les champs.", "error");
+    return;
+  }
+
+  if (!email.endsWith("@dgpe.gouv.ci")) {
+    showMsg("⛔ Inscription réservée aux emails DGPE.", "error");
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.signUp({
+    email,
+    password
+  });
+
+  if (error) {
+    showMsg("❌ Erreur inscription : " + error.message, "error");
   } else {
-    alert("✅ Compte créé ! Vérifiez votre email avant de vous connecter.");
+    showMsg(
+      "✅ Compte créé. Il sera activé après validation par l’administrateur DGPE.",
+      "success"
+    );
   }
 }
 </script>
+
 
 </body>
 </html>

@@ -31,29 +31,30 @@
   </div>
 </section>
 
-<!-- ================= LOGIN ================= -->
+<!-- ================= LOGIN CARD ================= -->
 <div class="login-wrap">
   <div class="login-card">
     <h2>Se connecter</h2>
 
-    <label>Email</label>
-    <input id="email" class="input" type="email" placeholder="email@exemple.com">
+    <!-- 🔒 FORM -->
+    <form id="loginForm">
+      <label>Email</label>
+      <input id="email" class="input" type="email" required>
 
-    <label>Mot de passe</label>
-    <input id="password" class="input" type="password" placeholder="••••••••">
+      <label>Mot de passe</label>
+      <input id="password" class="input" type="password" required>
 
-    <div class="row">
-      <label>
-        <input type="checkbox"> Se souvenir de moi
-      </label>
-      <a href="#" onclick="forgotPassword()">Mot de passe oublié ?</a>
-    </div>
+      <div class="row">
+        <label><input type="checkbox"> Se souvenir de moi</label>
+        <a href="#">Mot de passe oublié ?</a>
+      </div>
 
-    <button id="btnLogin" class="btn btn-primary">
-      Connexion
-    </button>
+      <button type="submit" class="btn btn-primary">
+        Connexion
+      </button>
+    </form>
 
-    <br><br>
+    <br>
 
     <button id="btnRegister" class="btn btn-secondary">
       Créer un compte
@@ -67,8 +68,11 @@
 © 2025 DGPE – Direction Générale du Portefeuille de l’État
 </footer>
 
+<!-- ================= SUPABASE ================= -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
+/* ================= CONFIG ================= */
 const SUPABASE_URL = "https://rwjyxmzdwdddjaeghpae.supabase.co";
 const SUPABASE_ANON_KEY =
 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3anl4bXpkd2RkZGphZWdocGFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMjk5OTQsImV4cCI6MjA4MTcwNTk5NH0.ByhiCOu5LvPIb-0iSqhWSNlInvPCls0GxEsxULF2LMA";
@@ -77,14 +81,9 @@ const supabaseClient = supabase.createClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY
 );
-</script>
-
 
 /* ================= UI ================= */
-const emailInput = document.getElementById("email");
-const passwordInput = document.getElementById("password");
 const msg = document.getElementById("msg");
-
 function showMsg(text, type="info") {
   msg.textContent = text;
   msg.style.color =
@@ -95,9 +94,13 @@ function showMsg(text, type="info") {
 }
 
 /* ================= LOGIN ================= */
-document.getElementById("btnLogin").addEventListener("click", async () => {
-  const email = emailInput.value.trim().toLowerCase();
-  const password = passwordInput.value.trim();
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault(); // 🔥 CRUCIAL
+
+  console.log("🔐 Tentative de connexion");
+
+  const email = document.getElementById("email").value.trim().toLowerCase();
+  const password = document.getElementById("password").value.trim();
 
   if (!email || !password) {
     showMsg("❌ Veuillez remplir tous les champs.", "error");
@@ -106,11 +109,10 @@ document.getElementById("btnLogin").addEventListener("click", async () => {
 
   showMsg("⏳ Connexion en cours…");
 
-  /* 1️⃣ AUTH SUPABASE */
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email,
-    password
-  });
+  const { data, error } =
+    await supabaseClient.auth.signInWithPassword({ email, password });
+
+  console.log("AUTH RESULT:", data, error);
 
   if (error || !data.user) {
     showMsg("❌ Email ou mot de passe incorrect.", "error");
@@ -119,66 +121,36 @@ document.getElementById("btnLogin").addEventListener("click", async () => {
 
   const authId = data.user.id;
 
-  /* 2️⃣ CONTRÔLE MÉTIER DGPE */
   const { data: profile, error: profileError } = await supabaseClient
     .from("users")
     .select("status, role")
     .eq("auth_id", authId)
     .single();
 
-  if (profileError || !profile) {
-    showMsg("⛔ Compte non autorisé par l’administration DGPE.", "error");
-    return;
-  }
+  console.log("PROFILE:", profile, profileError);
 
-  if (profile.status === "PENDING") {
-    showMsg("⏳ Compte en attente de validation.", "warning");
+  if (!profile || profileError) {
+    showMsg("⛔ Compte non autorisé DGPE.", "error");
     return;
   }
 
   if (profile.status !== "ACTIF") {
-    showMsg("⛔ Compte désactivé.", "error");
+    showMsg("⛔ Compte non actif.", "warning");
     return;
   }
 
   showMsg("✅ Connexion réussie. Redirection…", "success");
 
   setTimeout(() => {
-    if (profile.role === "ADMIN") {
-      window.location.href = "admin.html";
-    } else {
-      window.location.href = "dashboard.html";
-    }
-  }, 700);
+    window.location.href =
+      profile.role === "ADMIN" ? "admin.html" : "dashboard.html";
+  }, 600);
 });
 
-/* ================= INSCRIPTION ================= */
+/* ================= REGISTER ================= */
 document.getElementById("btnRegister").addEventListener("click", () => {
-  showMsg(
-    "ℹ️ La création de compte est gérée par l’administration DGPE.",
-    "warning"
-  );
+  showMsg("ℹ️ Création de compte gérée par l’administration DGPE.", "warning");
 });
-
-/* ================= MOT DE PASSE OUBLIÉ ================= */
-async function forgotPassword() {
-  const email = emailInput.value.trim().toLowerCase();
-
-  if (!email) {
-    showMsg("❌ Entrez votre email pour réinitialiser le mot de passe.", "error");
-    return;
-  }
-
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + "/reset-password.html"
-  });
-
-  if (error) {
-    showMsg("❌ Erreur lors de l’envoi du mail.", "error");
-  } else {
-    showMsg("📧 Email de réinitialisation envoyé.", "success");
-  }
-}
 </script>
 
 </body>

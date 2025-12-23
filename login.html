@@ -58,8 +58,7 @@
    CONFIG – NE PAS MODIFIER
 ===================================================== */
 const SUPABASE_URL = "https://rwjyxmzdwdddjaeghpae.supabase.co";
-const SUPABASE_ANON_KEY =
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3anl4bXpkd2RkZGphZWdocGFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMjk5OTQsImV4cCI6MjA4MTcwNTk5NH0.ByhiCOu5LvPIb-0iSqhWSNlInvPCls0GxEsxULF2LMA";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3anl4bXpkd2RkZGphZWdocGFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMjk5OTQsImV4cCI6MjA4MTcwNTk5NH0.ByhiCOu5LvPIb-0iSqhWSNlInvPCls0GxEsxULF2LMA";
 
 /* =====================================================
    INIT SUPABASE
@@ -74,6 +73,7 @@ const supabaseClient = supabase.createClient(
    UI
 ===================================================== */
 const msg = document.getElementById("msg");
+
 function show(text, type="info") {
   msg.textContent = text;
   msg.style.color =
@@ -98,8 +98,8 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
 
   show("⏳ Connexion en cours...");
 
-  const { data, error } =
-    await supabaseClient.auth.signInWithPassword({ email, password });
+  // Authentification avec Supabase
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
   if (error || !data?.user) {
     show("❌ Identifiants incorrects.", "error");
@@ -108,11 +108,10 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
 
   show("✅ Connexion réussie. Redirection...", "success");
 
-  /* 🔥 REDIRECTION ABSOLUE (GITHUB PAGES SAFE) */
+  // Délai avant redirection pour que le message apparaisse
   setTimeout(() => {
-    window.location.href =
-      "https://dgpe-hub.github.io/DGPE-E-LEARNING-PLATFORM/dashboard.html";
-  }, 400);
+    window.location.href = "https://dgpe-hub.github.io/DGPE-E-LEARNING-PLATFORM/dashboard.html";
+  }, 1000); // 1 seconde de délai pour voir le message
 });
 </script>
 

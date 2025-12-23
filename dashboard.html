@@ -36,11 +36,12 @@
   © 2025 DGPE – Direction Générale du Portefeuille de l’État
 </footer>
 
-<!-- ================= SUPABASE ================= -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* ================= CONFIG SUPABASE (IDENTIQUE AU LOGIN) ================= */
+/* ================= CONFIG ================= */
+const BASE_PATH = "/DGPE-E-LEARNING-PLATFORM/";
+
 const SUPABASE_URL = "https://rwjyxmzdwdddjaeghpae.supabase.co";
 const SUPABASE_ANON_KEY =
 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3anl4bXpkd2RkZGphZWdocGFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYxMjk5OTQsImV4cCI6MjA4MTcwNTk5NH0.ByhiCOu5LvPIb-0iSqhWSNlInvPCls0GxEsxULF2LMA";
@@ -50,30 +51,27 @@ const supabaseClient = supabase.createClient(
   SUPABASE_ANON_KEY
 );
 
-/* ================= AUTH GUARD ================= */
-(async () => {
-  const { data, error } = await supabaseClient.auth.getUser();
+/* ================= AUTH GUARD CORRECT ================= */
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  console.log("AUTH EVENT:", event, session);
 
-  console.log("SESSION USER:", data?.user);
-
-  if (error || !data?.user) {
-    location.replace("login.html");
+  if (!session || !session.user) {
+    window.location.href = BASE_PATH + "login.html";
     return;
   }
 
-  // Affichage menu privé
+  // ✅ UTILISATEUR CONNECTÉ
   document.getElementById("nav-private").classList.remove("hidden");
 
-  // Message bienvenue
   document.getElementById("welcome").textContent =
-    "Bienvenue " + (data.user.email || "");
-})();
+    "Bienvenue " + (session.user.email || "");
+});
 
 /* ================= LOGOUT ================= */
 document.getElementById("logout").addEventListener("click", async (e) => {
   e.preventDefault();
   await supabaseClient.auth.signOut();
-  location.replace("login.html");
+  window.location.href = BASE_PATH + "login.html";
 });
 </script>
 
